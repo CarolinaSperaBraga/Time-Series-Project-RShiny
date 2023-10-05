@@ -1,4 +1,4 @@
-# Projeto---Series-Temporais
+# Projeto de Séries Temporais
 
 Projeto em construção.
 
