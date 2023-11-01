@@ -274,35 +274,19 @@ ui <- fluidPage(
              tabPanel("Sobre o site",
                       tags$div(
                         tags$h4("Introdução"),
-                        "No contexto de um programa de aprendizado ao longo de um semestre acadêmico, empreenderemos uma jornada composta por quatro fases cruciais,
-                culminando na elaboração de uma plataforma digital interativa voltada para a análise e exploração de dados meteorológicos oriundos da base
-                de dados do INMET. Através deste percurso, conduziremos a transformação do conhecimento teórico em aplicações práticas.",
+                        "No âmbito de um programa de aprendizado contínuo ao longo de um semestre acadêmico, empreenderemos uma jornada composta por quatro fases fundamentais, culminando na concepção de uma plataforma digital interativa voltada para a análise e exploração de dados meteorológicos provenientes da base de dados do Instituto Nacional de Meteorologia (INMET). Por meio deste percurso, iremos transpor o conhecimento teórico para a esfera prática.",
                         
-                        tags$br(),tags$br(),tags$h4("Exploração e Compreensão dos Dados Meteorológicos: Desvelando a Complexidade dos Dados"),
-                        "Na fase inaugural, imergiremos em um amplo acervo de dados meteorológicos públicos disponibilizados pelo INMET.
-                Nesta imersão, decifraremos a infraestrutura que alberga tais dados, solidificando uma compreensão aprofundada das metodologias
-                subjacentes à coleta e disseminação. A exploração deste ecossistema não somente ampliará o horizonte de compreensão dos dados, mas também
-                fornecerá perspicácia sobre o contexto subjacente e as limitações inerentes.",
+                        tags$br(),tags$br(),tags$h4("Exploração e Compreensão dos Dados Meteorológicos"),
+                        "Na etapa inaugural, nos dedicaremos a uma imersão meticulosa no vasto repositório de dados meteorológicos de acesso público disponibilizados pelo INMET. Durante essa incursão, desvelaremos a infraestrutura que sustenta tais registros, consolidando uma compreensão detalhada das metodologias subjacentes à coleta e disseminação dos mesmos. Esta exploração abrangente não apenas expandirá o horizonte de compreensão dos dados, mas também proporcionará discernimento sobre o contexto subjacente e as limitações inerentes.",
                         
-                        tags$br(),tags$br(),tags$h4("Da Curiosidade à Formulação de Questões Relevantes: Navegando pelas Interrogações"),
-                        "Em posse dos questionamentos, procederemos à exploração das teorias matemáticas, estatísticas e computacionais que fundamentam a análise dos dados
-                meteorológicos. Esta etapa nos capacitará a conduzir investigações mais abrangentes, utilizando técnicas estatísticas robustas e métodos
-                avançados de análise computacional. Ao fazê-lo, serão revelados padrões, tendências e correlações latentes nos dados, reforçando sua habilidade
-                para sustentar decisões informadas.",
+                        tags$br(),tags$br(),tags$h4("Da Curiosidade à Formulação de Questões Relevantes"),
+                        "Com os questionamentos delineados, nos aprofundaremos na exploração das teorias matemáticas, estatísticas e computacionais que fundamentam a análise dos dados meteorológicos. Esta etapa nos dotará das habilidades necessárias para conduzir investigações mais abrangentes, utilizando técnicas estatísticas robustas e métodos avançados de análise computacional. Neste processo, padrões, tendências e correlações latentes nos dados serão revelados, reforçando sua capacidade de sustentar decisões informadas.",
                         
-                        tags$br(),tags$br(),tags$h4("Alicerces Teóricos para Análise Profunda: Explorando a Essência da Investigação"),
-                        "Em posse dos questionamentos, procederemos à exploração das teorias matemáticas, estatísticas e computacionais que fundamentam a análise
-                dos dados meteorológicos. Esta etapa nos capacitará a conduzir investigações mais abrangentes, utilizando técnicas estatísticas robustas
-                e métodos avançados de análise computacional. Ao fazê-lo, serão revelados padrões, tendências e correlações latentes nos dados,
-                reforçando sua habilidade para sustentar decisões informadas.",
+                        tags$br(),tags$br(),tags$h4("Alicerces Teóricos para Análise Profunda"),
+                        "Aprofundando-se nos questionamentos delineados, exploraremos as bases teóricas das teorias matemáticas, estatísticas e computacionais que fundamentam a análise dos dados meteorológicos. Esta etapa nos habilitará a conduzir investigações mais abrangentes, utilizando técnicas estatísticas robustas e métodos avançados de análise computacional. Ao fazê-lo, padrões, tendências e correlações latentes nos dados serão revelados, reforçando sua habilidade para sustentar decisões informadas.",
                         
-                        tags$br(),tags$br(),tags$h4("Desenvolvimento de uma Plataforma Web Interativa: Unindo Teoria e Prática"),
-                        "O ápice deste programa educacional será materializado na construção de uma plataforma digital interativa.
-                Essa plataforma se converterá em um portal, viabilizando a análise de dados meteorológicos a um público de diversas disciplinas e
-                níveis de expertise. Por meio da adoção de uma abordagem intuitiva e customizada, a plataforma habilitará os usuários a explorar
-                discernimentos de forma eficaz. Dessa maneira, a teoria será concretizada por meio de uma ferramenta funcional, oferecendo uma experiência
-                envolvente tanto para os pesquisadores quanto para os interessados em compreender os padrões climáticos característicos do período
-                considerado.",
+                        tags$br(),tags$br(),tags$h4("Desenvolvimento de uma Plataforma Web Interativa"),
+                        "O ponto culminante deste programa educacional será concretizado na construção de uma plataforma digital interativa. Esta plataforma se configurará como um portal, possibilitando a análise de dados meteorológicos por um público diversificado, abrangendo diversas disciplinas e níveis de expertise. Através da implementação de uma abordagem intuitiva e customizada, a plataforma capacitará os usuários a explorar insights de maneira eficaz. Desta forma, a teoria será materializada por meio de uma ferramenta funcional, oferecendo uma experiência envolvente tanto para os pesquisadores quanto para os interessados em compreender os padrões climáticos característicos do período considerado.",
                         
                         tags$br(),tags$br(),tags$h4("Referências"),
                         tags$b("Pacote ‘BrazilMet’: "), tags$a(href="https://github.com/nytimes/covid-19-data", "Package ‘BrazilMet’"),tags$br(),
@@ -318,8 +302,6 @@ ui <- fluidPage(
                         "Matheus Vinicius Barreto de Farias",tags$br(),
                         "Thaís Parron Alves",tags$br(),
                         
-                        # tags$br(),tags$br(),tags$h4("Contact"),
-                        # "https://www.icmc.usp.br/",tags$br(),tags$br(),
                         tags$img(src = "usp-university-of-sao-paulo7715.jpg", width = "120px", height = "65px"), tags$img(src = "logo-icmc.png", width = "120px", height = "65px")
                       )
              )
