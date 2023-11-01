@@ -1,31 +1,9 @@
-# Bibliotecas Shiny
-library(shinydashboard)
-library(leaflet)
-library(shiny)
-library(dplyr)
-library(here)
-library(fresh)
-library(shinythemes)
-library(magrittr)
-library(rvest)
-library(readxl)
-library(maps)
-library(ggplot2)
-library(reshape2)
-library(ggiraph)
-library(RColorBrewer)
-library(plotly)
-library(geojsonio)
-library(shinyWidgets)
-library(stringr)
+# Bibliotecas utilizadas
+bibliotecas <- c("shinydashboard", "leaflet", "shiny", "dplyr", "here", "fresh", "shinythemes", 
+                 "magrittr", "rvest", "readxl", "maps", "ggplot2", "reshape2", "ggiraph", 
+                 "RColorBrewer", "plotly", "geojsonio", "shinyWidgets", "stringr", "fpp3", "tsibble", "zoo", "readr")
 
-# Bibliotecas operacionais
-library(dplyr)
-library(fpp3)
-library(tsibble)
-library(zoo)
-library(readr)
-
+lapply(bibliotecas, require, character.only = TRUE)
 
 # Leitura dos dados
 est_nomes <- read.csv("nomes_codigos_estacoes.csv", sep=",", header = TRUE)
