@@ -28,11 +28,8 @@ library(readr)
 
 
 # Leitura dos dados
-# dados <- read.csv("dados_quase_completos.csv", sep=",", header = TRUE)
-dados <- read.csv("dados2011_2022.csv", sep=",", header = TRUE)
-dados$Date = as.Date(dados$Date)
+est_nomes <- read.csv("nomes_codigos_estacoes.csv", sep=",", header = TRUE)
 
-est_nomes <- data.frame(codigo = unique(dados$Station_code))
 cidades <- read.csv("CatalogoEstaçõesAutomáticas.csv", sep=";", header = TRUE)
 
 # Criando uma coluna com o nome da cidade e estado
@@ -41,8 +38,6 @@ cidades_mod$coluna1 <- str_to_title(tolower(cidades_mod$coluna1))
 cidades_mod$estacao <- paste(cidades_mod$coluna1, cidades_mod$coluna2, sep = "-")
 
 cidades_mod = cidades_mod[,c("codigo", "estacao")]
-
-est_nomes = merge(est_nomes, cidades_mod, by = "codigo")
 
 # Manipulação dos nomes das estações
 epc = function(e) filter(est_nomes, estacao == e)$codigo # converte estacao para codigo
@@ -65,54 +60,31 @@ vpt2 = function(v2) filter(var_nomes2, variavel2 == v2)$titulo2 # converte vari�
 vpl2 = function(v2) filter(var_nomes2, variavel2 == v2)$legenda2 # converte variável para legenda
 tpv = function(t2) filter(var_nomes2, titulo2 == t2)$variavel2 # converte título para variável
 
-
-titulos <- list(
-  "Tair_mean..c." = "Temperatura média do ar, em dias sucessivos",
-  "Tair_min..c." = "Temperatura mínima do ar, em dias sucessivos",      
-  "Tair_max..c." = "Temperatura máxima do ar, em dias sucessivos",    
-  "Dew_tmean..c." = "Temperatura do ponto de orvalho média, em dias sucessivos",   
-  "Dew_tmin..c." = "Temperatura do ponto de orvalho mínima, em dias sucessivos",
-  "Dew_tmax..c." = "Temperatura do ponto de orvalho máxima, em dias sucessivos",    
-  "Dry_bulb_t..c." = "Temperatura de bulbo seco, em dias sucessivos",  
-  "Rainfall..mm." = "Precipitação total, em dias sucessivos",      
-  "Patm..mB." = "Pressão atmosférica, em dias sucessivos",
-  "Rh_mean..porc." = "Umidade relativa do ar média, em dias sucessivos",    
-  "Rh_max..porc." = "Umidade relativa do ar máxima, em dias sucessivos",      
-  "Rh_min..porc." = "Umidade relativa do ar mínima, em dias sucessivos",  
-  "Ws_10..m.s.1." = "Velocidade do vento a 10 metros de altura, em dias sucessivos",     
-  "Ws_2..m.s.1." = "Velocidade do vento a 2 metros de altura, em dias sucessivos",       
-  "Ws_gust..m.s.1." = "Rajada de vento, em dias sucessivos",    
-  "Wd..degrees." = "Direção do vento, em dias sucessivos",      
-  "Sr..Mj.m.2.day.1." = "Radiação solar, em dias sucessivos",
-  "Ra..Mj.m.2.day.1." = "Radiação extraterrestre por períodos diários, em dias sucessivos"
-)
-
-legendaS <- list(
-  "Tair_mean..c." = 'Temperatura média do ar (°C)',
-  "Tair_min..c." = 'Temperatura mínima do ar (°C)',      
-  "Tair_max..c." = 'Temperatura máxima do ar (°C)',    
-  "Dew_tmean..c." = 'Temperatura do ponto de orvalho média (°C)',   
-  "Dew_tmin..c." = 'Temperatura do ponto de orvalho mínima (°C)',
-  "Dew_tmax..c." = 'Temperatura do ponto de orvalho máxima (°C)',    
-  "Dry_bulb_t..c." = 'Temperatura de bulbo seco (°C)',  
-  "Rainfall..mm." = 'Precipitação (mm)',     
-  "Patm..mB." = 'Pressão atmosférica (mB)',       
-  "Rh_mean..porc." = 'Umidade relativa do ar média (%)',    
-  "Rh_max..porc." = 'Umidade relativa do ar máxima (%)',     
-  "Rh_min..porc." = 'Umidade relativa do ar mínima (%)',  
-  "Ws_10..m.s.1." = 'Velocidade do vento a 10 metros de altura (m/s)',    
-  "Ws_2..m.s.1." = 'Velocidade do vento a 2 metros de altura (m/s)',       
-  "Ws_gust..m.s.1." = 'Rajada de vento (m/s)',    
-  "Wd..degrees." = 'Direção do vento (°)',      
-  "Sr..Mj.m.2.day.1." = expression(paste("Radiação solar (MJ/",m^2,")")),
-  "Ra..Mj.m.2.day.1." = expression(paste("Radiação solar (MJ/",m^2,")"))
-)
-
-variaveis <- c("Tair_mean..c.", "Tair_min..c.", "Tair_max..c.","Dew_tmean..c.", "Dew_tmin..c.", "Dew_tmax..c.", "Dry_bulb_t..c.",
-               "Rainfall..mm.", "Rh_mean..porc.", "Rh_max..porc.", "Rh_min..porc.", "Ws_10..m.s.1.", "Ws_2..m.s.1.", "Ws_gust..m.s.1.",
-               "Wd..degrees.", "Sr..Mj.m.2.day.1.") #"Ra..Mj.m.2.day.1." e "Patm..mB."
+carrega_estacao = function(cod_estacao){
+  dados = read.csv(paste("estacoes/", cod_estacao, ".csv", sep=""), sep=",", header = TRUE)
+  dados$Date = as.Date(dados$Date)
+  return(dados)
+}
 
 medias_por_ano <- read_csv("medias_por_ano_corrigido.csv", col_types = cols(...1 = col_skip()))
+
+intervalos <- list(
+  "Tair_mean..c." = seq(10, 32, by = 2),
+  "Tair_min..c." = seq(0, 30, by = 5),
+  "Tair_max..c." = seq(10, 40, by = 5),
+  "Dew_tmean..c." = seq(4, 24, by = 2),
+  "Dew_tmin..c." = seq(0, 25, by = 5),
+  "Dew_tmax..c." = seq(10, 30, by = 3),
+  "Dry_bulb_t..c." = seq(10, 32, by = 2),
+  "Rainfall..mm." = seq(0, 15, by = 1),
+  "Rh_mean..porc." = seq(10, 100, by = 10),
+  "Rh_max..porc." = seq(40, 100, by = 5),
+  "Rh_min..porc." = seq(10, 90, by = 10),
+  "Ws_10..m.s.1." = seq(0, 8, by = 1),
+  "Ws_gust..m.s.1." = seq(0, 18, by = 2),
+  "Wd..degrees." = seq(0, 360, by = 60),
+  "Sr..Mj.m.2.day.1." = seq(0, 70, by = 5)
+)
 
 # UI
 ui <- fluidPage(
@@ -151,8 +123,8 @@ ui <- fluidPage(
                                               ),
                                               mainPanel(plotOutput("graph_media_movel"),
                                                         helpText("Gráficos de médias móveis são úteis para identificar tendências na série temporal. A linha das médias móveis representa o valor médio dos pontos de dados dentro da janela de tempo especificada que você pode selecionar.",tags$br(),
-                                                                 "- Se a linha estiver subindo, há uma indicação de uma tendência ascendente nos dados. Se a linha estiver em declínio, há uma indicação de uma tendência descendente.",tags$br(),
-                                                                 "- Observe casos em que a média móvel e os dados brutos divergem significativamente. A divergência pode indicar potenciais pontos de viragem ou reversões na tendência."))
+                                                                 "Se a linha estiver subindo, há uma indicação de uma tendência ascendente nos dados. Se a linha estiver em declínio, há uma indicação de uma tendência descendente.",tags$br(),
+                                                                 "Observe casos em que a média móvel e os dados brutos divergem significativamente. A divergência pode indicar potenciais pontos de viragem ou reversões na tendência."))
                                             )
                                    ),
                                    tabPanel("Gráfico de Sazonalidade", icon = icon("chart-line"), 
@@ -179,13 +151,15 @@ ui <- fluidPage(
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
                                               ),
                                               mainPanel(plotOutput("graph_lag"),
-                                                        helpText("Gráficos de defasagens são úteis para a avaliar autocorrelação, ou seja, verificam se uma série temporal é aleatória ou não.",tags$br(),
-                                                                 "- O eixo horizontal mostra o valor da variável.",tags$br(),
-                                                                 "- O eixo vertical mostra o valor da variável para k = 6 meses (primeiro plot) e k = 12 meses (segundo plot).",tags$br(),
-                                                                 "- As cores representam cada mês do ano.",tags$br(),
-                                                                 "- Se os pontos no gráfico de defasagens se agruparem em torno da linha diagonal tracejada em cor cinza, há indicação  de autocorrelação positiva. Ou seja, a variável está positivamente correlacionada com seus valores passados.",tags$br(),
-                                                                 "- Se os pontos se agruparem em torno de uma linha diagonal do canto superior esquerdo ao canto inferior direito, isso sugere autocorrelação negativa. Neste caso, a variável está negativamente correlacionada com seus valores passados.",tags$br(),
-                                                                 "- Se os pontos estiverem espalhados aleatoriamente sem formar um padrão claro, há indicação de que não há autocorrelação significativa."))
+                                                        helpText(HTML("Gráficos de defasagens são úteis para a avaliar autocorrelação, ou seja, verificam se uma série temporal é aleatória ou não.<br>",
+                                                                 "<ul>
+                                                                 <li> O eixo horizontal mostra o valor da variável. </li>
+                                                                 <li> O eixo vertical mostra o valor da variável para k = 6 meses (primeiro plot) e k = 12 meses (segundo plot). </li>
+                                                                 </ul>",
+                                                                 "As cores representam cada mês do ano.<br>",
+                                                                 "Se os pontos no gráfico de defasagens se agruparem em torno da linha diagonal tracejada em cor cinza, há indicação  de autocorrelação positiva. Ou seja, a variável está positivamente correlacionada com seus valores passados.<br>",
+                                                                 "Se os pontos se agruparem em torno de uma linha diagonal do canto superior esquerdo ao canto inferior direito, isso sugere autocorrelação negativa. Neste caso, a variável está negativamente correlacionada com seus valores passados.<br>",
+                                                                 "Se os pontos estiverem espalhados aleatoriamente sem formar um padrão claro, há indicação de que não há autocorrelação significativa.")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Sub-séries", icon = icon("chart-line"), 
@@ -198,13 +172,15 @@ ui <- fluidPage(
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
                                               ),
                                               mainPanel(plotOutput("graph_subserie"),
-                                                        helpText("Gráficos de sub-séries são úteis para identificar mudanças em períodos específicos e padrões sazonais. Neste gráfico, os dados de cada mês são coletados de forma conjunta e separados em mini plots. Esta forma de gráfico permite que o padrão sazonal subjacente seja visualizado de forma mais clara.",tags$br(),
-                                                                 "- Eixo vertical: variável resposta.",tags$br(),
-                                                                 "- Eixo horizontal: Tempo ordenado por mês do ano. Por exemplo, todos os valores de janeiro são plotados (em ordem cronológica), depois todos os valores de fevereiro, e assim por diante.",tags$br(),
-                                                                 "- As linhas em azul representam as médias dos meses conforme os anos escolhidos.",tags$br(),
-                                                                 "- Compare as alturas dos picos e vales em diferentes meses. Esta comparação ajuda a identificar os meses com maior impacto na variável resposta.",tags$br(),
-                                                                 "- Observe se há um padrão dentro do mês (por exemplo, janeiro e dezembro apresentam padrões semelhantes?).",tags$br(),
-                                                                 "- Procure mudanças nos padrões sazonais em diferentes meses. Uma modificação pode indicar uma mudança no início ou no final de uma temporada específica."))
+                                                        helpText(HTML("Gráficos de sub-séries são úteis para identificar mudanças em períodos específicos e padrões sazonais. Neste gráfico, os dados de cada mês são coletados de forma conjunta e separados em mini plots. Esta forma de gráfico permite que o padrão sazonal subjacente seja visualizado de forma mais clara.<br>",
+                                                                 "<ul>
+                                                                 <li> Eixo vertical: variável resposta. </li>
+                                                                 <li> Eixo horizontal: Tempo ordenado por mês do ano. Por exemplo, todos os valores de janeiro são plotados (em ordem cronológica), depois todos os valores de fevereiro, e assim por diante. </li>
+                                                                 </ul>",
+                                                                 "As linhas em azul representam as médias dos meses conforme os anos escolhidos.<br>",
+                                                                 "Compare as alturas dos picos e vales em diferentes meses. Esta comparação ajuda a identificar os meses com maior impacto na variável resposta.<br>",
+                                                                 "Observe se há um padrão dentro do mês (por exemplo, janeiro e dezembro apresentam padrões semelhantes?).<br>",
+                                                                 "Procure mudanças nos padrões sazonais em diferentes meses. Uma modificação pode indicar uma mudança no início ou no final de uma temporada específica.")))
                                             )
                                    ),
                                    tabPanel("Wetbulb", icon = icon("chart-line"), 
@@ -215,7 +191,19 @@ ui <- fluidPage(
                                                            dateInput("wetbulb_data_f", h5("Data de fim"), "2020-01-01"),
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
                                               ),
-                                              mainPanel(plotOutput("graph_wetbulb"))
+                                              mainPanel(plotOutput("graph_wetbulb"),
+                                                        helpText(HTML("O gráfico visa visualizar como as diferentes combinações de temperatura e umidade afetam a habitabilidade humana. As zonas de conforto são identificadas com cores diferentes para indicar diferentes níveis de conforto, risco, criticidade ou perigo, dependendo das condições de Wet Bulb.<br>",
+                                                                 "<br>",
+                                                                 "Eixo X (Temperatura Ambiente (°C)): Este eixo representa a temperatura ambiente em graus Celsius.<br>",
+                                                                 "Eixo Y (Umidade Relativa (%)): Este eixo representa a umidade relativa em percentagem.<br>",
+                                                                 "Legenda (Zonas): Esta legenda fornece uma chave para as diferentes zonas identificadas no gráfico. As zonas são caracterizadas por,<br>",
+                                                                 "<ul>
+                                                                 <li> Confortável: Uma cor verde pálido. </li>
+                                                                 <li> Risco: Uma cor laranja claro. </li>
+                                                                 <li> Crítico: Uma cor vermelha claro. </li>
+                                                                 <li> Perigoso: Uma cor vermelha mais escura. </li>
+                                                                 </ul>",
+                                                                 "Os pontos azuis representam os dados observados de temperatura e umidade.")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Autocorrelação", icon = icon("chart-line"), 
@@ -227,7 +215,15 @@ ui <- fluidPage(
                                                            dateInput("autocorr_data_f", h5("Data de fim"), "2020-01-01"),
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
                                               ),
-                                              mainPanel(plotOutput("graph_autocorr"))
+                                              mainPanel(plotOutput("graph_autocorr"),
+                                                        helpText(HTML("Este gráfico é útil para identificar padrões temporais na série de dados. Por exemplo, se houver uma autocorrelação significativa em uma determinada defasagem, isso pode indicar a presença de padrões sazonais ou tendências temporais nos dados.<br>",
+                                                                      "<br>",
+                                                                      "<ul>
+                                                                      <li> Eixo X (Defasagem): A defasagem (lag) representa o número de períodos anteriores que estão sendo usados para calcular a correlação com o período atual. Por exemplo, uma defasagem de 1 indica a correlação entre os dados no momento atual e os dados de um período anterior.</li>
+                                                                      <li> Eixo Y (Autocorrelação): A autocorrelação é uma medida estatística que indica o grau de correlação entre uma série temporal e uma versão deslocada (defasada) de si mesma. Varia de -1 a 1, onde 1 indica uma correlação perfeita, -1 indica uma correlação inversa perfeita e 0 indica ausência de correlação.</li>
+                                                                      <li> Linhas verticais: As linhas azuis no gráfico representam os valores de autocorrelação para diferentes defasagens. Cada ponto no gráfico indica a autocorrelação para uma determinada defasagem.</li>
+                                                                      <li> Área entre as linhas pontilhadas azuis: A área sombreada em torno de zero indica o intervalo de confiança para a autocorrelação. Pontos fora desta área podem ser estatisticamente significativos.</li>
+                                                                      </ul>")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Decomposição", icon = icon("chart-line"), 
@@ -239,7 +235,15 @@ ui <- fluidPage(
                                                            dateInput("decomp_data_f", h5("Data de fim"), "2020-01-01"),
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
                                               ),
-                                              mainPanel(plotOutput("graph_decomp"))
+                                              mainPanel(plotOutput("graph_decomp"),
+                                                        helpText(HTML("<ul>
+                                                        <li> Série Temporal Original: A linha no gráfico representa a série temporal original, que são os dados de uma variável meteorológica (como temperatura, precipitação, etc.) ao longo do tempo.</li>
+                                                        <li> Componente de Tendência (Trend): A linha mais suave no gráfico representa a tendência da série temporal. É uma estimativa de como a variável muda ao longo do tempo, removendo os efeitos sazonais e irregulares.</li>
+                                                        <li> Componente Sazonal (Seasonal): As flutuações que ocorrem em padrões regulares dentro da série temporal são representadas pela componente sazonal. Por exemplo, se os dados exibirem padrões sazonais, como variações anuais de temperatura, essas variações serão capturadas por esta componente.</li>
+                                                        <li> Componente de Irregularidade (Residuals): Esta componente representa os resíduos ou erros que não podem ser explicados pela tendência ou pela sazonalidade. São as variações imprevisíveis ou aleatórias nos dados.</li>
+                                                        </ul>",
+                                                        "Este tipo de gráfico é útil para entender a estrutura subjacente de uma série temporal. Permite separar os diferentes componentes que contribuem para as variações nos dados ao longo do tempo. A decomposição facilita a identificação de padrões sazonais, tendências de longo prazo e flutuações irregulares.<br>",
+                                                        "No contexto meteorológico, por exemplo, a tendência pode representar uma mudança gradual nas temperaturas ao longo dos anos, a componente sazonal pode indicar variações sazonais previsíveis (como as estações do ano), e os resíduos podem representar variações imprevisíveis de curto prazo. Essa informação é valiosa para a interpretação e modelagem de séries temporais.")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Diferenciação", icon = icon("chart-line"),
@@ -252,7 +256,13 @@ ui <- fluidPage(
                                                            dateInput("dif_data_f", h5("Data de fim"), "2020-01-01"),
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
                                               ),
-                                              mainPanel(plotOutput("graph_dif"))
+                                              mainPanel(plotOutput("graph_dif"),
+                                                        helpText(HTML("O gráfico de diferenciação exibe a diferença entre os valores de uma variável em relação a um número específico de períodos de tempo (defasagem). Vamos analisar a interpretação do gráfico:<br>",
+                                                                      "<ul>
+                                                                      <li> Eixo X (horizontal): Representa o tempo ou os períodos de observação. Cada ponto ao longo do eixo representa uma observação em um determinado intervalo de tempo. </li>
+                                                                      <li> Eixo Y (vertical): Indica a diferença entre os valores da variável selecionada em relação à defasagem especificada. A defasagem determina quantos períodos de tempo são subtraídos entre os valores. </li>
+                                                                      <li> Linha no Gráfico: A linha conecta os pontos, mostrando como a diferença sazonal varia ao longo do tempo. Uma linha ascendente indica que a diferença está aumentando, enquanto uma linha descendente indica que está diminuindo. </li>
+                                                                      </ul>")))
                                             )
                                    ),
                                    tabPanel("Teste de Cox-Stuart", icon = icon("chart-line"),
@@ -267,7 +277,10 @@ ui <- fluidPage(
                                               ),
                                               mainPanel(plotOutput("graph_cox_stuart"),
                                                         br(), br(),
-                                                        verbatimTextOutput("stats"),)
+                                                        verbatimTextOutput("stats"),
+                                                        helpText("O gráfico mostra a série temporal ajustada, que é a série original após a remoção da componente sazonal. Isso ajuda a visualizar os padrões de variação que não são explicados pela sazonalidade. Por exemplo, se houver uma tendência de longo prazo ou padrões de curto prazo, eles serão mais visíveis na série ajustada.",tags$br(),
+                                                                 tags$br(),
+                                                                 "O teste de Cox-Stuart é uma ferramenta estatística utilizada para verificar se existe uma tendência significativa em uma série temporal. Ele avalia se há uma mudança sistemática na direção dos valores ao longo do tempo. A estatística de teste é comparada a uma distribuição de probabilidade para determinar se a tendência é estatisticamente significativa. O valor-p indica a probabilidade de observar uma estatística de teste tão extrema quanto a observada, se não houver tendência na série. Se o valor-p for pequeno (geralmente abaixo de 0.05), podemos rejeitar a hipótese nula de ausência de tendência."))
                                             )
                                    )
                       )
@@ -351,6 +364,9 @@ server <- function(input, output){
     data_i = input$mediamovel_data_i
     data_f = input$mediamovel_data_f
     estacao = epc(input$mediamovel_est)
+    
+    dados = carrega_estacao(estacao)
+    
     k = input$mediamovel_k
     variavel = tpv(input$mediamovel_var)
     
@@ -370,8 +386,8 @@ server <- function(input, output){
   })
   
   output$graph_sazonalidade <- renderPlot({
-    base = dados
     estacao = epc(input$sazonalidade_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$sazonalidade_var)
     Data_ini = input$sazonalidade_data_i
     Data_fim = input$sazonalidade_data_f
@@ -397,8 +413,8 @@ server <- function(input, output){
   })
   
   output$graph_lag <- renderPlot({
-    base = dados
     estacao = epc(input$lag_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$lag_var)
     Data_ini = input$lag_data_i
     Data_fim = input$lag_data_f
@@ -427,8 +443,8 @@ server <- function(input, output){
   })
   
   output$graph_subserie <- renderPlot({
-    base = dados
     estacao = epc(input$subserie_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$subserie_var)
     Data_ini = input$subserie_data_i
     Data_fim = input$subserie_data_f
@@ -456,15 +472,22 @@ server <- function(input, output){
   })
   
   output$graph_wetbulb <- renderPlot({
-    base = dados
     estacao = epc(input$wetbulb_est)
+    base = carrega_estacao(estacao)
     Data_ini = input$wetbulb_data_i
     Data_fim = input$wetbulb_data_f
     
-    temperatures <- seq(0, 50, length.out=100)
-    humidities <- seq(0, 100, length.out=100)
-
-    grid <- expand.grid(T1=temperatures, H1=humidities)
+    dados_corte = filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim))
+    
+    temperatures <- dados_corte$Tair_mean..c.
+    humidities <- dados_corte$Rh_mean..porc.
+    
+    dados_corte = data.frame(T1=temperatures, H1=humidities)
+    
+    temperatures <- seq(0, 50, length.out=50)
+    humidities <- seq(0, 100, length.out=50)
+    
+    grid <- expand.grid(T=temperatures, H=humidities)
     grid$W <- grid$T - (0.55 * (1 - grid$H/100) * (grid$T - 14.5))
     
     # Definindo as zonas
@@ -475,15 +498,7 @@ server <- function(input, output){
     grid$Z <- ifelse(grid$W <= W_amarela, "Confortável",
                      ifelse(grid$W <= W_laranja, "Risco",
                             ifelse(grid$W <= W_vermelha, "Crítico", "Perigoso")))
-
-    # Leitura dos dados
-    dados_corte = filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim))
-
-    temperatures <- dados_corte$Tair_mean..c.
-    humidities <- dados_corte$Rh_mean..porc.
-
-    dados_corte = data.frame(T2=temperatures, H2=humidities)
-
+    
     # Cores
     colors_light <- c("Confortável"="#a8e6cf",
                       "Risco"="#ffd3b6",
@@ -491,18 +506,18 @@ server <- function(input, output){
                       "Perigoso"="#ff8b94")
     
     # Plot
-    ggplot(grid, aes(x=T1, y=H1, fill=Z)) +
+    ggplot(grid, aes(x=T, y=H, fill=Z)) +
       geom_tile() +
       scale_fill_manual(values=colors_light, breaks=names(colors_light)) +  # Definindo a escala de preenchimento como discreta
       labs(title="Efeito de Wet Bulb na Habitabilidade Humana", x="Temperatura Ambiente (°C)", y="Umidade Relativa (%)", fill="Zonas") +
       theme_minimal() +
-      geom_point(data=dados_corte, aes(x=T2, y=H2), color="blue", size=2, inherit.aes=F)
+      geom_point(data=dados_corte, aes(x=T1, y=H1), color="blue", size=2, inherit.aes=F)
   })
   
   
   output$graph_autocorr <- renderPlot({
-    base = dados
     estacao = epc(input$autocorr_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$autocorr_var)
     Data_ini = input$autocorr_data_i
     Data_fim = input$autocorr_data_f
@@ -526,10 +541,10 @@ server <- function(input, output){
       coord_cartesian(ylim=c(-1,1)) +
       theme_minimal(); G1
   })
- 
+  
   output$graph_decomp <- renderPlot({
-    base = dados
     estacao = epc(input$decomp_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$decomp_var)
     Data_ini = input$decomp_data_i
     Data_fim = input$decomp_data_f
@@ -554,13 +569,13 @@ server <- function(input, output){
   }) 
   
   output$graph_dif <- renderPlot({
-    base = dados
     estacao = epc(input$dif_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$dif_var)
     Data_ini = input$dif_data_i
     Data_fim = input$dif_data_f
     defasagem = input$dif_defasagem
-
+    
     base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
     filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
     dados = tsibble(
@@ -574,8 +589,8 @@ server <- function(input, output){
   })
   
   output$graph_cox_stuart <- renderPlot({
-    base = dados
     estacao = epc(input$cox_stuart_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$cox_stuart_var)
     Data_ini = input$cox_stuart_data_i
     Data_fim = input$cox_stuart_data_f
@@ -613,8 +628,8 @@ server <- function(input, output){
   })
   
   output$stats <- renderPrint({
-    base = dados
     estacao = epc(input$cox_stuart_est)
+    base = carrega_estacao(estacao)
     variavel = tpv(input$cox_stuart_var)
     Data_ini = input$cox_stuart_data_i
     Data_fim = input$cox_stuart_data_f
@@ -654,316 +669,25 @@ server <- function(input, output){
   
   ## Análise geográfica
   output$map <- renderLeaflet({
+    ano <- input$ano
+    variavel = input$var
+    var_nome = tpv(variavel)
     
-    #Mapa para Temperatura média do ar
-    if (input$var == "Temperatura média do ar"){
-      media_temp_ar <- as.numeric(medias_por_ano$"Tair_mean..c.")
-      ano <- input$ano
-      bins <- seq(10, 32, by = 2)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Tair_mean..c."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_temp_ar, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_temp_ar) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~ paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °C","<br>"),
-                   radius = 30000, color = ~pal(as.numeric(Tair_mean..c.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Tair_mean..c.), title = "Temperatura do ar média (°C)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Temperatura mínima do ar
-    }else if (input$var == "Temperatura mínima do ar"){
-      
-      media_temp_ar_min <- as.numeric(medias_por_ano$"Tair_min..c.")
-      ano <- as.numeric(medias_por_ano$Ano)
-      ano <- input$ano
-      bins <- seq(0, 30, by = 5)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Tair_min..c."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_temp_ar_min, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_temp_ar_min) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °C", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Tair_min..c.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Tair_min..c.), title = "Temperatura do ar mínima (°C)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Temperatura máxima do ar
-    }else if (input$var == "Temperatura máxima do ar"){
-      media_temp_ar_max <- as.numeric(medias_por_ano$"Tair_max..c.")
-      ano <- input$ano
-      bins <- seq(10, 40, by = 5)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Tair_max..c."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_temp_ar_max, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_temp_ar_max) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °C", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Tair_max..c.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Tair_max..c.), title = "Temperatura do ar máxima (°C)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Temperatura do ponto de orvalho média
-    }else if (input$var == "Temperatura do ponto de orvalho média"){
-      media_dew_m <- as.numeric(medias_por_ano$"Dew_tmean..c.")
-      ano <- input$ano
-      bins <- seq(4, 24, by = 2)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Dew_tmean..c."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_dew_m, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_dew_m) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °C", "<br>"),
-                   radius = 30000, color = ~pal(as.numeric(Dew_tmean..c.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Dew_tmean..c.), title = "Temperatura do ponto de orvalho média (°C)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Temperatura do ponto de orvalho mínima
-    }else if (input$var == "Temperatura do ponto de orvalho mínima"){
-      media_dew_min <- as.numeric(medias_por_ano$"Dew_tmin..c.")
-      ano <- input$ano
-      bins <- seq(0, 25, by = 5)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Dew_tmin..c."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_dew_min, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_dew_min) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °C", "<br>"),
-                   radius = 30000, color = ~pal(as.numeric(Dew_tmin..c.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Dew_tmin..c.), title = "Temperatura do ponto de orvalho mínima (°C)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Temperatura do ponto de orvalho máxima
-    }else if (input$var == "Temperatura do ponto de orvalho máxima"){
-      media_dew_max <- as.numeric(medias_por_ano$"Dew_tmax..c.")
-      ano <- input$ano
-      bins <- seq(10, 30, by = 3)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Dew_tmax..c."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_dew_max, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_dew_max) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °C", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Dew_tmax..c.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Dew_tmax..c.), title = "Temperatura do ponto de orvalho máxima (°C)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Temperatura de bulbo seco
-    }else if (input$var == "Temperatura de bulbo seco"){
-      media_dry_bulb <- as.numeric(medias_por_ano$"Dry_bulb_t..c.")
-      ano <- input$ano
-      bins <- seq(10, 32, by = 2)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Dry_bulb_t..c."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_dry_bulb, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_dry_bulb) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °C", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Dry_bulb_t..c.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Dry_bulb_t..c.), title = "Temperatura de bulbo seco (°C)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Precipitação total
-    }else if (input$var == "Precipitação total"){
-      media_rainfall <- as.numeric(medias_por_ano$"Rainfall..mm.")
-      ano <- input$ano
-      bins <- seq(0, 15, by = 1)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Rainfall..mm."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_rainfall, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_rainfall) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " mm", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Rainfall..mm.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Rainfall..mm.), title = "Precipitação total (mm)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Umidade relativa do ar média
-    }else if (input$var == "Umidade relativa do ar média"){
-      media_urm <- as.numeric(medias_por_ano$"Rh_mean..porc.")
-      ano <- input$ano
-      bins <- seq(10, 100, by = 10)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Rh_mean..porc."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_urm, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_urm) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " %", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Rh_mean..porc.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Rh_mean..porc.), title = "Umidade relativa média (%)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Umidade relativa do ar máxima
-    }else if (input$var == "Umidade relativa do ar máxima"){
-      media_urma <- as.numeric(medias_por_ano$"Rh_max..porc.")
-      ano <- input$ano
-      bins <- seq(40, 100, by = 5)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Rh_max..porc."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_urma, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_urma) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " %", "<br>"),
-                   radius = 30000, color = ~pal(as.numeric(Rh_max..porc.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Rh_max..porc.), title = "Umidade relativa máxima (%)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Umidade relativa do ar mínima
-    }else if (input$var == "Umidade relativa do ar mínima"){
-      media_urmi <- as.numeric(medias_por_ano$"Rh_min..porc.")
-      ano <- input$ano
-      bins <- seq(10, 90, by = 10)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Rh_min..porc."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_urmi, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_urmi) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " %", "<br>"),
-                   radius = 30000, color = ~pal(as.numeric(Rh_min..porc.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Rh_min..porc.), title = "Umidade relativa mínima (%)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Velocidade do vento a 10 metros de altura
-    }else if (input$var == "Velocidade do vento a 10 metros de altura"){
-      media_ws10 <- as.numeric(medias_por_ano$"Ws_10..m.s.1.")
-      ano <- input$ano
-      bins <- seq(0, 8, by = 1)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Ws_10..m.s.1."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_ws10, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_ws10) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " m/s", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Ws_10..m.s.1.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Ws_10..m.s.1.), title = "Velocidade do vento a 10 metros de altura (m/s)", opacity = 1)
-      
-      mapa
-      
-    #   #Mapa para Velocidade do vento a 2 metros de altura
-    # }else if (input$var == "Velocidade do vento a 2 metros de altura"){
-    #   media_ws2 <- as.numeric(medias_por_ano$"Ws_2..m.s.1.")
-    #   ano <- input$ano
-    #   bins <- seq(-3.3, -3.1, by = 0.05)
-    #   data_filtered <- subset(medias_por_ano, Ano == ano)
-    #   m <- data_filtered$"Ws_2..m.s.1."
-    #   pal <- colorBin("YlOrRd", domain = data_filtered$media_ws2, bins = bins)
-    #   labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-    #                     data_filtered$Station, data_filtered$media_ws2) %>% lapply(htmltools::HTML)
-    #   mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-    #     addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-    #                popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " m/s", "<br>"),
-    #                radius = 30000, color = ~pal(as.numeric(Ws_2..m.s.1.)), fillOpacity = 1) %>%
-    #     addLegend("bottomright", pal = pal, values = ~as.numeric(Ws_2..m.s.1.), title = "Velocidade do vento a 2 metros de altura (m/s)", opacity = 1)
-    #   
-    #   mapa
-      
-      #Mapa para Rajada de vento
-    }else if (input$var == "Rajada de vento"){
-      media_l <- as.numeric(medias_por_ano$"Ws_gust..m.s.1.")
-      ano <- input$ano
-      bins <- seq(0, 18, by = 2)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Ws_gust..m.s.1."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_l, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_l) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " m/s", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Ws_gust..m.s.1.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Ws_gust..m.s.1.), title = "Lufada - Rajada de vento (m/s)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Direção do vento
-    }else if (input$var == "Direção do vento"){
-      media_l <- as.numeric(medias_por_ano$"Wd..degrees.")
-      ano <- input$ano
-      bins <- seq(0, 360, by = 60)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Wd..degrees."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_l, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_l) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " °", "<br>"), 
-                   radius = 30000, color = ~pal(as.numeric(Wd..degrees.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Wd..degrees.), title = "Direção do vento (°)", opacity = 1)
-      
-      mapa
-      
-      #Mapa para Radiação solar
-    }else if (input$var == "Radiação solar"){
-      media_sr <- as.numeric(medias_por_ano$"Sr..Mj.m.2.day.1.")
-      ano <- input$ano
-      bins <- seq(0, 70, by = 5)
-      data_filtered <- subset(medias_por_ano, Ano == ano)
-      m <- data_filtered$"Sr..Mj.m.2.day.1."
-      pal <- colorBin("YlOrRd", domain = data_filtered$media_sr, bins = bins)
-      labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-                        data_filtered$Station, data_filtered$media_sr) %>% lapply(htmltools::HTML)
-      mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-        addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-                   popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual: </b>", round(as.numeric(m),2), " (MJ/m^2)", "<br>"),
-                   radius = 30000, color = ~pal(as.numeric(Sr..Mj.m.2.day.1.)), fillOpacity = 1) %>%
-        addLegend("bottomright", pal = pal, values = ~as.numeric(Sr..Mj.m.2.day.1.), title = "Radiação solar (MJ/m^2)", opacity = 1)
-      
-      mapa
-      
-      # #Mapa para Radiação extraterrestre por períodos diários
-      # }else if (input$var == "Radiação extraterrestre por períodos diários"){
-      #   media_ra <- as.numeric(medias_por_ano$"Ra..Mj.m.2.day.1.")
-      #   ano <- input$ano
-      #   bins <- seq(12, 20, by = 2)
-      #   data_filtered <- subset(medias_por_ano, Ano == ano)
-      #   m <- data_filtered$"Ra..Mj.m.2.day.1."
-      #   pal <- colorBin("YlOrRd", domain = data_filtered$media_ra, bins = bins)
-      #   labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
-      #                     data_filtered$Station, data_filtered$media_ra) %>% lapply(htmltools::HTML)
-      #   mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
-      #     addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
-      #                popup = ~paste0(sep = " ","<b>", Station, "<b><br>","<b>Média anual"): </b>", round(as.numeric(m),2), " (MJ/m^2)", "<br>"),
-      # radius = 30000, color = ~pal(as.numeric(Ra..Mj.m.2.day.1.)), fillOpacity = 1) %>%
-      #     addLegend("bottomright", pal = pal, values = ~as.numeric(Ra..Mj.m.2.day.1.), title = expression(paste("Radiação solar (MJ/",m^2,")")), opacity = 1)
-      #
-      #   mapa
-      
-    }
+    media_variavel <- as.numeric(medias_por_ano[[var_nome]])
+    
+    bins <- intervalos[[var_nome]]
+    data_filtered <- subset(medias_por_ano, Ano == ano)
+    m <- data_filtered[[var_nome]]
+    pal <- colorBin("YlOrRd", domain = data_filtered$media_variavel, bins = bins)
+    labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
+                      data_filtered$Station, data_filtered$media_variavel) %>% lapply(htmltools::HTML)
+    mapa <- leaflet(data = data_filtered) %>% addTiles() %>%
+      addCircles(lng = ~as.numeric(Longitude..degrees.), lat = ~as.numeric(Latitude..degrees.), weight = 15,
+                 popup = ~ paste0(sep = " ","<b>", Station, "<br>", vpl(var_nome), " média anual: ", round(as.numeric(m),2),"</b><br>"),
+                 radius = 30000, color = ~pal(as.numeric(data_filtered[[var_nome]])), fillOpacity = 1) %>%
+      addLegend("bottomright", pal = pal, values = ~as.numeric(data_filtered[[var_nome]]), title = variavel, opacity = 1)
+    
+    mapa
   })
 }
 
