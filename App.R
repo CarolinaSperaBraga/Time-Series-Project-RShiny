@@ -44,21 +44,14 @@ epc = function(e) filter(est_nomes, estacao == e)$codigo # converte estacao para
 cpe = function(c) filter(est_nomes, codigo == c)$estacao # converte codigo para estacao
 
 # Manipulação dos nomes das variáveis
-var_nomes = data.frame(variavel = c("Tair_mean..c.", "Tair_min..c.", "Tair_max..c.", "Dew_tmean..c.", "Dew_tmin..c.", "Dew_tmax..c.", "Dry_bulb_t..c.", "Rainfall..mm.", "Patm..mB.", "Rh_mean..porc.", "Rh_max..porc.", "Rh_min..porc.", "Ws_10..m.s.1.", "Ws_2..m.s.1.", "Ws_gust..m.s.1.", "Wd..degrees.", "Sr..Mj.m.2.day.1.", "Ra..Mj.m.2.day.1."),
-                       titulo = c("Temperatura média do ar", "Temperatura mínima do ar", "Temperatura máxima do ar", "Temperatura do ponto de orvalho média", "Temperatura do ponto de orvalho mínima", "Temperatura do ponto de orvalho máxima", "Temperatura de bulbo seco", "Precipitação total", "Pressão atmosférica", "Umidade relativa do ar média", "Umidade relativa do ar máxima", "Umidade relativa do ar mínima", "Velocidade do vento a 10 metros de altura", "Velocidade do vento a 2 metros de altura", "Rajada de vento", "Direção do vento", "Radiação solar", "Radiação extraterrestre por períodos diários"),
-                       legenda = c('Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Precipitação (mm)', 'Pressão atmosférica (mB)', 'Umidade (%)', 'Umidade (%)', 'Umidade (%)', 'Velocidade do vento (m/s)', 'Velocidade do vento (m/s)', 'Velocidade do vento (m/s)', 'Direção do vento (°)', "Radiação solar (MJ/m^2)", "Radiação solar (MJ/m^2)"))
-
-var_nomes2 = data.frame(variavel2 = c("Tair_mean..c.", "Tair_min..c.", "Tair_max..c.", "Dew_tmean..c.", "Dew_tmin..c.", "Dew_tmax..c.", "Dry_bulb_t..c.", "Rainfall..mm.", "Rh_mean..porc.", "Rh_max..porc.", "Rh_min..porc.", "Ws_10..m.s.1.", "Ws_gust..m.s.1.", "Wd..degrees.", "Sr..Mj.m.2.day.1."),
-                        titulo2 = c("Temperatura média do ar", "Temperatura mínima do ar", "Temperatura máxima do ar", "Temperatura do ponto de orvalho média", "Temperatura do ponto de orvalho mínima", "Temperatura do ponto de orvalho máxima", "Temperatura de bulbo seco", "Precipitação total", "Umidade relativa do ar média", "Umidade relativa do ar máxima", "Umidade relativa do ar mínima", "Velocidade do vento a 10 metros de altura", "Rajada de vento", "Direção do vento", "Radiação solar"),
-                        legenda2 = c('Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Precipitação (mm)', 'Umidade (%)', 'Umidade (%)', 'Umidade (%)', 'Velocidade do vento (m/s)', 'Velocidade do vento (m/s)', 'Direção do vento (°)', "Radiação solar (MJ/m^2)"))
+var_nomes = data.frame(variavel = c("Tair_mean..c.", "Tair_min..c.", "Tair_max..c.", "Dew_tmean..c.", "Dew_tmin..c.", "Dew_tmax..c.", "Dry_bulb_t..c.", "Rainfall..mm.", "Rh_mean..porc.", "Rh_max..porc.", "Rh_min..porc.", "Ws_10..m.s.1.", "Ws_gust..m.s.1.", "Wd..degrees.", "Sr..Mj.m.2.day.1."),
+                        titulo = c("Temperatura média do ar", "Temperatura mínima do ar", "Temperatura máxima do ar", "Temperatura do ponto de orvalho média", "Temperatura do ponto de orvalho mínima", "Temperatura do ponto de orvalho máxima", "Temperatura de bulbo seco", "Precipitação total", "Umidade relativa do ar média", "Umidade relativa do ar máxima", "Umidade relativa do ar mínima", "Velocidade do vento a 10 metros de altura", "Rajada de vento", "Direção do vento", "Radiação solar"),
+                        legenda = c('Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Precipitação (mm)', 'Umidade (%)', 'Umidade (%)', 'Umidade (%)', 'Velocidade do vento (m/s)', 'Velocidade do vento (m/s)', 'Direção do vento (°)', "Radiação solar (MJ/m^2)"))
 
 
 vpt = function(v) filter(var_nomes, variavel == v)$titulo # converte variável para título
 vpl = function(v) filter(var_nomes, variavel == v)$legenda # converte variável para legenda
 tpv = function(t) filter(var_nomes, titulo == t)$variavel # converte título para variável
-vpt2 = function(v2) filter(var_nomes2, variavel2 == v2)$titulo2 # converte variável para título
-vpl2 = function(v2) filter(var_nomes2, variavel2 == v2)$legenda2 # converte variável para legenda
-tpv = function(t2) filter(var_nomes2, titulo2 == t2)$variavel2 # converte título para variável
 
 carrega_estacao = function(cod_estacao){
   dados = read.csv(paste("estacoes/", cod_estacao, ".csv", sep=""), sep=",", header = TRUE)
@@ -102,7 +95,7 @@ ui <- fluidPage(
                                         top = 140, left = 55, width = 400, fixed=TRUE,
                                         draggable = F, height = "auto", h3("Análise geográfica"),
                                         
-                                        selectInput("var","Var",label = h4("Selecione a variável:"), choices = var_nomes2$titulo2),
+                                        selectInput("var","Var",label = h4("Selecione a variável:"), choices = var_nomes$titulo),
                                         sliderInput("ano", label = h4("Selecione o ano"), min = 2000, max = 2022, value = 2019, sep = ""), hr(),
                                         fluidRow(column(4, verbatimTextOutput("value"))),
                                         tags$div(id="cite", h6('Dados retirados do portal INMET.'))))
@@ -115,7 +108,7 @@ ui <- fluidPage(
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
                                                            numericInput("mediamovel_k", h5("Número de observações utilizadas na média:"), value = 30, min = 0),
-                                                           selectInput("mediamovel_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("mediamovel_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("mediamovel_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            dateInput("mediamovel_data_i", h5("Data de início"), "2015-01-01"),
                                                            dateInput("mediamovel_data_f", h5("Data de fim"), "2016-01-01"),
@@ -131,7 +124,7 @@ ui <- fluidPage(
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
                                                            selectInput("sazonalidade_periodo", h5("Selecione o período:"), c("week","month","year"), selected = "year"),
-                                                           selectInput("sazonalidade_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("sazonalidade_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("sazonalidade_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            dateInput("sazonalidade_data_i", h5("Data de início"), "2013-01-01"),
                                                            dateInput("sazonalidade_data_f", h5("Data de fim"), "2020-01-01"),
@@ -144,7 +137,7 @@ ui <- fluidPage(
                                    tabPanel("Gráfico de Defasagens", icon = icon("chart-line"), 
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
-                                                           selectInput("lag_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("lag_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("lag_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            dateInput("lag_data_i", h5("Data de início"), "2013-01-01"),
                                                            dateInput("lag_data_f", h5("Data de fim"), "2020-01-01"),
@@ -165,7 +158,7 @@ ui <- fluidPage(
                                    tabPanel("Gráfico de Sub-séries", icon = icon("chart-line"), 
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
-                                                           selectInput("subserie_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("subserie_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("subserie_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            dateInput("subserie_data_i", h5("Data de início"), "2013-01-01"),
                                                            dateInput("subserie_data_f", h5("Data de fim"), "2020-01-01"),
@@ -209,7 +202,7 @@ ui <- fluidPage(
                                    tabPanel("Gráfico de Autocorrelação", icon = icon("chart-line"), 
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
-                                                           selectInput("autocorr_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("autocorr_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("autocorr_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            dateInput("autocorr_data_i", h5("Data de início"), "2013-01-01"),
                                                            dateInput("autocorr_data_f", h5("Data de fim"), "2020-01-01"),
@@ -229,7 +222,7 @@ ui <- fluidPage(
                                    tabPanel("Gráfico de Decomposição", icon = icon("chart-line"), 
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
-                                                           selectInput("decomp_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("decomp_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("decomp_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            dateInput("decomp_data_i", h5("Data de início"), "2013-01-01"),
                                                            dateInput("decomp_data_f", h5("Data de fim"), "2020-01-01"),
@@ -249,7 +242,7 @@ ui <- fluidPage(
                                    tabPanel("Gráfico de Diferenciação", icon = icon("chart-line"),
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
-                                                           selectInput("dif_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("dif_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("dif_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            numericInput("dif_defasagem", h5("Selecione a defasagem:"), value = 12, min = 1),
                                                            dateInput("dif_data_i", h5("Data de início"), "2013-01-01"),
@@ -268,7 +261,7 @@ ui <- fluidPage(
                                    tabPanel("Teste de Cox-Stuart", icon = icon("chart-line"),
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
-                                                           selectInput("cox_stuart_var", h5("Selecione a variável:"), var_nomes2$titulo2),
+                                                           selectInput("cox_stuart_var", h5("Selecione a variável:"), var_nomes$titulo),
                                                            selectInput("cox_stuart_est", h5("Selecione a estação:"), est_nomes$estacao),
                                                            numericInput("cox_stuart_defasagem", h5("Selecione a defasagem:"), value = 12, min = 1),
                                                            dateInput("cox_stuart_data_i", h5("Data de início"), "2013-01-01"),
