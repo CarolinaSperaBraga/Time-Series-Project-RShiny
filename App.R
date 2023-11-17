@@ -19,11 +19,14 @@ library(shinyWidgets)
 library(stringr)
 
 # Bibliotecas operacionais
+library(forecast)
 library(dplyr)
 library(fpp3)
 library(tsibble)
 library(zoo)
 library(readr)
+library(imputeTS) # biblioteca que faz a interpolação das observações
+
 
 # Leitura dos dados
 est_nomes <- read.csv("nomes_codigos_estacoes.csv", sep=",", header = TRUE)
@@ -43,8 +46,8 @@ cpe = function(c) filter(est_nomes, codigo == c)$estacao # converte codigo para 
 
 # Manipulação dos nomes das variáveis
 var_nomes = data.frame(variavel = c("Tair_mean..c.", "Tair_min..c.", "Tair_max..c.", "Dew_tmean..c.", "Dew_tmin..c.", "Dew_tmax..c.", "Dry_bulb_t..c.", "Rainfall..mm.", "Rh_mean..porc.", "Rh_max..porc.", "Rh_min..porc.", "Ws_10..m.s.1.", "Ws_gust..m.s.1.", "Wd..degrees.", "Sr..Mj.m.2.day.1."),
-                        titulo = c("Temperatura média do ar", "Temperatura mínima do ar", "Temperatura máxima do ar", "Temperatura do ponto de orvalho média", "Temperatura do ponto de orvalho mínima", "Temperatura do ponto de orvalho máxima", "Temperatura de bulbo seco", "Precipitação total", "Umidade relativa do ar média", "Umidade relativa do ar máxima", "Umidade relativa do ar mínima", "Velocidade do vento a 10 metros de altura", "Rajada de vento", "Direção do vento", "Radiação solar"),
-                        legenda = c('Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Precipitação (mm)', 'Umidade (%)', 'Umidade (%)', 'Umidade (%)', 'Velocidade do vento (m/s)', 'Velocidade do vento (m/s)', 'Direção do vento (°)', "Radiação solar (MJ/m^2)"))
+                       titulo = c("Temperatura média do ar", "Temperatura mínima do ar", "Temperatura máxima do ar", "Temperatura do ponto de orvalho média", "Temperatura do ponto de orvalho mínima", "Temperatura do ponto de orvalho máxima", "Temperatura de bulbo seco", "Precipitação total", "Umidade relativa do ar média", "Umidade relativa do ar máxima", "Umidade relativa do ar mínima", "Velocidade do vento a 10 metros de altura", "Rajada de vento", "Direção do vento", "Radiação solar"),
+                       legenda = c('Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Temperatura (°C)', 'Precipitação (mm)', 'Umidade (%)', 'Umidade (%)', 'Umidade (%)', 'Velocidade do vento (m/s)', 'Velocidade do vento (m/s)', 'Direção do vento (°)', "Radiação solar (MJ/m^2)"))
 
 
 vpt = function(v) filter(var_nomes, variavel == v)$titulo # converte variável para título
@@ -54,10 +57,26 @@ tpv = function(t) filter(var_nomes, titulo == t)$variavel # converte título par
 carrega_estacao = function(cod_estacao){
   dados = read.csv(paste("estacoes/", cod_estacao, ".csv", sep=""), sep=",", header = TRUE)
   dados$Date = as.Date(dados$Date)
+  
+  # adiciona as datas faltantes
+  menor_dia = min(dados$Date, na.rm=TRUE)
+  maior_dia = max(dados$Date, na.rm=TRUE)
+  
+  ts = seq.Date(menor_dia, maior_dia, by="day")
+  df = data.frame(Date=ts)
+  dados = merge(df, dados, by='Date', all.x = TRUE, all.y = F)
+  
+  dados[is.na(dados$Station_code),"Station_code"] = unique(na.omit(dados$Station_code))
+  dados[is.na(dados$Station),"Station"] = unique(na.omit(dados$Station))
+  dados[is.na(dados$UF),"UF"] = unique(na.omit(dados$UF))
+  
+  # imputa os dados
+  dados <- na_seadec(dados, algorithm = "interpolation")
+  
   return(dados)
 }
 
-medias_por_ano <- read_csv("medias_por_ano_corrigido.csv", col_types = cols(...1 = col_skip()))
+medias_por_ano <- read_csv("medias_por_ano.csv", col_types = cols(...1 = col_skip()))
 
 intervalos <- list(
   "Tair_mean..c." = seq(10, 32, by = 2),
@@ -143,14 +162,14 @@ ui <- fluidPage(
                                               ),
                                               mainPanel(plotOutput("graph_lag"),
                                                         helpText(HTML("Gráficos de defasagens são úteis para a avaliar autocorrelação, ou seja, verificam se uma série temporal é aleatória ou não.<br>",
-                                                                 "<ul>
+                                                                      "<ul>
                                                                  <li> O eixo horizontal mostra o valor da variável. </li>
                                                                  <li> O eixo vertical mostra o valor da variável para k = 6 meses (primeiro plot) e k = 12 meses (segundo plot). </li>
                                                                  </ul>",
-                                                                 "As cores representam cada mês do ano.<br>",
-                                                                 "Se os pontos no gráfico de defasagens se agruparem em torno da linha diagonal tracejada em cor cinza, há indicação  de autocorrelação positiva. Ou seja, a variável está positivamente correlacionada com seus valores passados.<br>",
-                                                                 "Se os pontos se agruparem em torno de uma linha diagonal do canto superior esquerdo ao canto inferior direito, isso sugere autocorrelação negativa. Neste caso, a variável está negativamente correlacionada com seus valores passados.<br>",
-                                                                 "Se os pontos estiverem espalhados aleatoriamente sem formar um padrão claro, há indicação de que não há autocorrelação significativa.")))
+                                                                      "As cores representam cada mês do ano.<br>",
+                                                                      "Se os pontos no gráfico de defasagens se agruparem em torno da linha diagonal tracejada em cor cinza, há indicação  de autocorrelação positiva. Ou seja, a variável está positivamente correlacionada com seus valores passados.<br>",
+                                                                      "Se os pontos se agruparem em torno de uma linha diagonal do canto superior esquerdo ao canto inferior direito, isso sugere autocorrelação negativa. Neste caso, a variável está negativamente correlacionada com seus valores passados.<br>",
+                                                                      "Se os pontos estiverem espalhados aleatoriamente sem formar um padrão claro, há indicação de que não há autocorrelação significativa.")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Sub-séries", icon = icon("chart-line"), 
@@ -164,14 +183,14 @@ ui <- fluidPage(
                                               ),
                                               mainPanel(plotOutput("graph_subserie"),
                                                         helpText(HTML("Gráficos de sub-séries são úteis para identificar mudanças em períodos específicos e padrões sazonais. Neste gráfico, os dados de cada mês são coletados de forma conjunta e separados em mini plots. Esta forma de gráfico permite que o padrão sazonal subjacente seja visualizado de forma mais clara.<br>",
-                                                                 "<ul>
+                                                                      "<ul>
                                                                  <li> Eixo vertical: variável resposta. </li>
                                                                  <li> Eixo horizontal: Tempo ordenado por mês do ano. Por exemplo, todos os valores de janeiro são plotados (em ordem cronológica), depois todos os valores de fevereiro, e assim por diante. </li>
                                                                  </ul>",
-                                                                 "As linhas em azul representam as médias dos meses conforme os anos escolhidos.<br>",
-                                                                 "Compare as alturas dos picos e vales em diferentes meses. Esta comparação ajuda a identificar os meses com maior impacto na variável resposta.<br>",
-                                                                 "Observe se há um padrão dentro do mês (por exemplo, janeiro e dezembro apresentam padrões semelhantes?).<br>",
-                                                                 "Procure mudanças nos padrões sazonais em diferentes meses. Uma modificação pode indicar uma mudança no início ou no final de uma temporada específica.")))
+                                                                      "As linhas em azul representam as médias dos meses conforme os anos escolhidos.<br>",
+                                                                      "Compare as alturas dos picos e vales em diferentes meses. Esta comparação ajuda a identificar os meses com maior impacto na variável resposta.<br>",
+                                                                      "Observe se há um padrão dentro do mês (por exemplo, janeiro e dezembro apresentam padrões semelhantes?).<br>",
+                                                                      "Procure mudanças nos padrões sazonais em diferentes meses. Uma modificação pode indicar uma mudança no início ou no final de uma temporada específica.")))
                                             )
                                    ),
                                    tabPanel("Wetbulb", icon = icon("chart-line"), 
@@ -184,17 +203,17 @@ ui <- fluidPage(
                                               ),
                                               mainPanel(plotOutput("graph_wetbulb"),
                                                         helpText(HTML("O gráfico visa visualizar como as diferentes combinações de temperatura e umidade afetam a habitabilidade humana. As zonas de conforto são identificadas com cores diferentes para indicar diferentes níveis de conforto, risco, criticidade ou perigo, dependendo das condições de Wet Bulb.<br>",
-                                                                 "<br>",
-                                                                 "Eixo X (Temperatura Ambiente (°C)): Este eixo representa a temperatura ambiente em graus Celsius.<br>",
-                                                                 "Eixo Y (Umidade Relativa (%)): Este eixo representa a umidade relativa em percentagem.<br>",
-                                                                 "Legenda (Zonas): Esta legenda fornece uma chave para as diferentes zonas identificadas no gráfico. As zonas são caracterizadas por,<br>",
-                                                                 "<ul>
+                                                                      "<br>",
+                                                                      "Eixo X (Temperatura Ambiente (°C)): Este eixo representa a temperatura ambiente em graus Celsius.<br>",
+                                                                      "Eixo Y (Umidade Relativa (%)): Este eixo representa a umidade relativa em percentagem.<br>",
+                                                                      "Legenda (Zonas): Esta legenda fornece uma chave para as diferentes zonas identificadas no gráfico. As zonas são caracterizadas por,<br>",
+                                                                      "<ul>
                                                                  <li> Confortável: Uma cor verde pálido. </li>
                                                                  <li> Risco: Uma cor laranja claro. </li>
                                                                  <li> Crítico: Uma cor vermelha claro. </li>
                                                                  <li> Perigoso: Uma cor vermelha mais escura. </li>
                                                                  </ul>",
-                                                                 "Os pontos azuis representam os dados observados de temperatura e umidade.")))
+                                                                      "Os pontos azuis representam os dados observados de temperatura e umidade.")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Autocorrelação", icon = icon("chart-line"), 
@@ -217,6 +236,30 @@ ui <- fluidPage(
                                                                       </ul>")))
                                             )
                                    ),
+                                   tabPanel("Gráfico de Autocorrelação Parcial", icon = icon("chart-line"),
+                                            sidebarLayout(
+                                              sidebarPanel(width = 3,
+                                                           selectInput("autocorr_var_parcial", h5("Selecione a variável:"), var_nomes$titulo),
+                                                           selectInput("autocorr_est_parcial", h5("Selecione a estação:"), est_nomes$estacao),
+                                                           dateInput("autocorr_data_i_parcial", h5("Data de início"), "2013-01-01"),
+                                                           dateInput("autocorr_data_f_parcial", h5("Data de fim"), "2020-01-01"),
+                                                           tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
+                                              ),
+                                              mainPanel(plotOutput("graph_autocorr_parcial"),
+                                                        br(), br(),
+                                                        verbatimTextOutput("stats_autocorpar"),
+                                                        helpText(HTML("Ao analisar o gráfico de autocorrelação parcial, podem ser procurados cortes abruptos ou quedas significativas, que podem sugerir a ordem do termo de médias móveis (q) no modelo ARIMA.<br>",
+                                                                      "<br>",
+                                                                      "<ul>
+                                                                      <li> Eixo X (Defasagem): A defasagem (lag) representa o número de períodos anteriores que estão sendo usados para calcular a correlação com o período atual. Por exemplo, uma defasagem de 1 indica a correlação entre os dados no momento atual e os dados de um período anterior.</li>
+                                                                      <li> Eixo Y (Autocorrelação): A autocorrelação é uma medida estatística que indica o grau de correlação entre uma série temporal e uma versão deslocada (defasada) de si mesma. Varia de -1 a 1, onde 1 indica uma correlação perfeita, -1 indica uma correlação inversa perfeita e 0 indica ausência de correlação.</li>
+                                                                      <li> Linhas verticais: As linhas azuis no gráfico representam os valores de autocorrelação para diferentes defasagens. Cada ponto no gráfico indica a autocorrelação para uma determinada defasagem.</li>
+                                                                      <li> Área entre as linhas pontilhadas azuis: A área sombreada em torno de zero indica o intervalo de confiança para a autocorrelação. Pontos fora desta área podem ser estatisticamente significativos.</li>
+                                                                      </ul>",
+                                                                      "<br>",
+                                                                      "Abaixo do gráfico encontra-se o valor calculado, utilizando o modelo ARIMA, do valor de ordem do termo de médias móveis.")))
+                                            )
+                                   ),
                                    tabPanel("Gráfico de Decomposição", icon = icon("chart-line"), 
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
@@ -233,8 +276,8 @@ ui <- fluidPage(
                                                         <li> Componente Sazonal (Seasonal): As flutuações que ocorrem em padrões regulares dentro da série temporal são representadas pela componente sazonal. Por exemplo, se os dados exibirem padrões sazonais, como variações anuais de temperatura, essas variações serão capturadas por esta componente.</li>
                                                         <li> Componente de Irregularidade (Residuals): Esta componente representa os resíduos ou erros que não podem ser explicados pela tendência ou pela sazonalidade. São as variações imprevisíveis ou aleatórias nos dados.</li>
                                                         </ul>",
-                                                        "Este tipo de gráfico é útil para entender a estrutura subjacente de uma série temporal. Permite separar os diferentes componentes que contribuem para as variações nos dados ao longo do tempo. A decomposição facilita a identificação de padrões sazonais, tendências de longo prazo e flutuações irregulares.<br>",
-                                                        "No contexto meteorológico, por exemplo, a tendência pode representar uma mudança gradual nas temperaturas ao longo dos anos, a componente sazonal pode indicar variações sazonais previsíveis (como as estações do ano), e os resíduos podem representar variações imprevisíveis de curto prazo. Essa informação é valiosa para a interpretação e modelagem de séries temporais.")))
+                                                                      "Este tipo de gráfico é útil para entender a estrutura subjacente de uma série temporal. Permite separar os diferentes componentes que contribuem para as variações nos dados ao longo do tempo. A decomposição facilita a identificação de padrões sazonais, tendências de longo prazo e flutuações irregulares.<br>",
+                                                                      "No contexto meteorológico, por exemplo, a tendência pode representar uma mudança gradual nas temperaturas ao longo dos anos, a componente sazonal pode indicar variações sazonais previsíveis (como as estações do ano), e os resíduos podem representar variações imprevisíveis de curto prazo. Essa informação é valiosa para a interpretação e modelagem de séries temporais.")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Diferenciação", icon = icon("chart-line"),
@@ -513,6 +556,54 @@ server <- function(input, output){
       ) +
       coord_cartesian(ylim=c(-1,1)) +
       theme_minimal(); G1
+  })
+  
+  output$graph_autocorr_parcial <- renderPlot({
+    estacao = epc(input$autocorr_est_parcial)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$autocorr_var_parcial)
+    Data_ini = input$autocorr_data_i_parcial
+    Data_fim = input$autocorr_data_f_parcial
+    
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    dados = tsibble(
+      data = ymd(filtro$Date),
+      y = filtro[[variavel]],
+      index = data
+    )
+    G1 = 
+      dados %>%
+      fill_gaps(data,y = mean(y),.full=TRUE) %>%
+      pacf(y, lag_max=20) %>% 
+      autoplot() +
+      labs( 
+        x = 'Defasagem',
+        y = 'Autocorrelação parcial'
+      ) +
+      coord_cartesian(ylim=c(-1,1)) +
+      theme_minimal(); G1
+  })
+  
+  output$stats_autocorpar <- renderPrint({
+    estacao <- epc(input$autocorr_est_parcial)
+    base <- carrega_estacao(estacao)
+    variavel <- tpv(input$autocorr_var_parcial)
+    Data_ini <- input$autocorr_data_i_parcial
+    Data_fim <- input$autocorr_data_f_parcial
+    
+    base$months <- yearmonth(base$Date) # Passando para o formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    dados <- tsibble(
+      data = ymd(filtro$Date),
+      y = filtro[[variavel]],
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados$y) # Encontra a ordem do processo de médias móveis
+    q_valor <- arimaorder(modelo_auto_arima)[[3]]
+    
+    return(paste("O valor da ordem do termo de médias móveis (q) é:", q_valor))
   })
   
   output$graph_decomp <- renderPlot({
