@@ -71,30 +71,15 @@ carrega_estacao = function(cod_estacao){
   dados[is.na(dados$UF),"UF"] = unique(na.omit(dados$UF))
   
   # imputa os dados
-  dados <- na_seadec(dados, algorithm = "interpolation")
+  dados <- na_interpolation(dados, option = "stine")
+  # dados <- na_seadec(dados, algorithm = "interpolation")
   
   return(dados)
 }
 
 medias_por_ano <- read_csv("medias_por_ano.csv", col_types = cols(...1 = col_skip()))
+medias_por_ano = na.omit(medias_por_ano)
 
-intervalos <- list(
-  "Tair_mean..c." = seq(10, 32, by = 2),
-  "Tair_min..c." = seq(0, 30, by = 5),
-  "Tair_max..c." = seq(10, 40, by = 5),
-  "Dew_tmean..c." = seq(4, 24, by = 2),
-  "Dew_tmin..c." = seq(0, 25, by = 5),
-  "Dew_tmax..c." = seq(10, 30, by = 3),
-  "Dry_bulb_t..c." = seq(10, 32, by = 2),
-  "Rainfall..mm." = seq(0, 15, by = 1),
-  "Rh_mean..porc." = seq(10, 100, by = 10),
-  "Rh_max..porc." = seq(40, 100, by = 5),
-  "Rh_min..porc." = seq(10, 90, by = 10),
-  "Ws_10..m.s.1." = seq(0, 8, by = 1),
-  "Ws_gust..m.s.1." = seq(0, 18, by = 2),
-  "Wd..degrees." = seq(0, 360, by = 60),
-  "Sr..Mj.m.2.day.1." = seq(0, 70, by = 5)
-)
 
 # UI
 ui <- fluidPage(
@@ -226,6 +211,8 @@ ui <- fluidPage(
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
                                               ),
                                               mainPanel(plotOutput("graph_autocorr"),
+                                                        br(), br(),
+                                                        verbatimTextOutput("stats_autocor"),
                                                         helpText(HTML("Este gráfico é útil para identificar padrões temporais na série de dados. Por exemplo, se houver uma autocorrelação significativa em uma determinada defasagem, isso pode indicar a presença de padrões sazonais ou tendências temporais nos dados.<br>",
                                                                       "<br>",
                                                                       "<ul>
@@ -233,7 +220,10 @@ ui <- fluidPage(
                                                                       <li> Eixo Y (Autocorrelação): A autocorrelação é uma medida estatística que indica o grau de correlação entre uma série temporal e uma versão deslocada (defasada) de si mesma. Varia de -1 a 1, onde 1 indica uma correlação perfeita, -1 indica uma correlação inversa perfeita e 0 indica ausência de correlação.</li>
                                                                       <li> Linhas verticais: As linhas azuis no gráfico representam os valores de autocorrelação para diferentes defasagens. Cada ponto no gráfico indica a autocorrelação para uma determinada defasagem.</li>
                                                                       <li> Área entre as linhas pontilhadas azuis: A área sombreada em torno de zero indica o intervalo de confiança para a autocorrelação. Pontos fora desta área podem ser estatisticamente significativos.</li>
-                                                                      </ul>")))
+                                                                      </ul>",
+                                                                      "<br>",
+                                                                      "Ao analisar o gráfico de autocorrelação, podem ser procurados cortes abruptos ou quedas significativas, que podem sugerir o valor de ordem do termo de médias móveis no modelo.<br>",
+                                                                      "Abaixo do gráfico encontra-se o valor calculado, utilizando como critério o AIC (Critério de informação de Akaike), da estimativa do valor de ordem do termo de médias móveis (q).")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Autocorrelação Parcial", icon = icon("chart-line"),
@@ -248,7 +238,7 @@ ui <- fluidPage(
                                               mainPanel(plotOutput("graph_autocorr_parcial"),
                                                         br(), br(),
                                                         verbatimTextOutput("stats_autocorpar"),
-                                                        helpText(HTML("Ao analisar o gráfico de autocorrelação parcial, podem ser procurados cortes abruptos ou quedas significativas, que podem sugerir a ordem do termo de médias móveis (q) no modelo ARIMA.<br>",
+                                                        helpText(HTML("Ao analisar o gráfico de autocorrelação parcial, podem ser procurados cortes abruptos ou quedas significativas, que podem sugerir o número de termos autorregressivos (p) no modelo.<br>",
                                                                       "<br>",
                                                                       "<ul>
                                                                       <li> Eixo X (Defasagem): A defasagem (lag) representa o número de períodos anteriores que estão sendo usados para calcular a correlação com o período atual. Por exemplo, uma defasagem de 1 indica a correlação entre os dados no momento atual e os dados de um período anterior.</li>
@@ -257,7 +247,7 @@ ui <- fluidPage(
                                                                       <li> Área entre as linhas pontilhadas azuis: A área sombreada em torno de zero indica o intervalo de confiança para a autocorrelação. Pontos fora desta área podem ser estatisticamente significativos.</li>
                                                                       </ul>",
                                                                       "<br>",
-                                                                      "Abaixo do gráfico encontra-se o valor calculado, utilizando o modelo ARIMA, do valor de ordem do termo de médias móveis.")))
+                                                                      "Abaixo do gráfico encontra-se o valor calculado, utilizando como critério o AIC (Critério de informação de Akaike), da estimativa do número de termos autorregressivos (p) no modelo.")))
                                             )
                                    ),
                                    tabPanel("Gráfico de Decomposição", icon = icon("chart-line"), 
@@ -540,22 +530,56 @@ server <- function(input, output){
     
     base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
     filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
-    dados = tsibble(
-      data = ymd(filtro$Date),
-      y = filtro[[variavel]],
+    filtro$y <- filtro[[variavel]]
+    medias_T <- aggregate( y ~ months, data = filtro , FUN="mean" )
+    
+    dados_mensais = tsibble(
+      data = medias_T$months,
+      y = medias_T$y,
       index = data
     )
-    G1 = 
-      dados %>%
+    
+    decomposicao = dados_mensais %>%
       fill_gaps(data,y = mean(y),.full=TRUE) %>%
-      ACF(y=y, lag_max=20) %>% 
+      model(STL(y ~ season(window = 12))) %>%
+      components()
+    
+    # Obter a série sem tendência e sazonalidade (componente remainder)
+    serie_sem_tendencia_sazonalidade <- decomposicao %>%
+      pull(remainder)
+    
+    G1 <- dados_mensais %>%
+      fill_gaps(data, y = mean(serie_sem_tendencia_sazonalidade), .full = TRUE) %>%
+      ACF(y = .$y, lag_max = 20) %>%
       autoplot() +
       labs(
         x = 'Defasagem',
         y = 'Autocorrelação'
       ) +
-      coord_cartesian(ylim=c(-1,1)) +
-      theme_minimal(); G1
+      coord_cartesian(ylim = c(-1, 1)) +
+      theme_minimal()
+    G1
+  })
+  
+  output$stats_autocor <- renderPrint({
+    estacao = epc(input$autocorr_est)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$autocorr_var)
+    Data_ini = input$autocorr_data_i
+    Data_fim = input$autocorr_data_f
+    
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    dados = tsibble(
+      data = ymd(filtro$Date),
+      y = filtro[[variavel]],
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados$y) # Encontra a ordem do processo de médias móveis
+    q_valor <- arimaorder(modelo_auto_arima)[3]
+    
+    return(paste("A estimativa do valor da ordem do termo de médias móveis (q), calculada utilizando como critério o AIC, é:", q_valor))
   })
   
   output$graph_autocorr_parcial <- renderPlot({
@@ -567,22 +591,35 @@ server <- function(input, output){
     
     base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
     filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
-    dados = tsibble(
-      data = ymd(filtro$Date),
-      y = filtro[[variavel]],
+    filtro$y <- filtro[[variavel]]
+    medias_T <- aggregate( y ~ months, data = filtro , FUN="mean" )
+    
+    dados_mensais = tsibble(
+      data = medias_T$months,
+      y = medias_T$y,
       index = data
     )
-    G1 = 
-      dados %>%
-      fill_gaps(data,y = mean(y),.full=TRUE) %>%
-      pacf(y, lag_max=20) %>% 
+    
+    decomposicao = dados_mensais %>%
+      fill_gaps(data, y = mean(y), .full = TRUE) %>%
+      model(STL(y ~ season(window = 12))) %>%
+      components()
+    
+    # Obter a série sem tendência e sazonalidade (componente de erro)
+    serie_sem_tendencia_sazonalidade <- decomposicao %>%
+      pull(remainder)
+    
+    G1 <- dados_mensais %>%
+      fill_gaps(data, y = mean(serie_sem_tendencia_sazonalidade), .full = TRUE) %>%
+      {pacf(.$y, lag.max = 20)} %>%
       autoplot() +
-      labs( 
+      labs(
         x = 'Defasagem',
         y = 'Autocorrelação parcial'
       ) +
-      coord_cartesian(ylim=c(-1,1)) +
-      theme_minimal(); G1
+      coord_cartesian(ylim = c(-1, 1)) +
+      theme_minimal()
+    G1
   })
   
   output$stats_autocorpar <- renderPrint({
@@ -600,10 +637,10 @@ server <- function(input, output){
       index = data
     )
     
-    modelo_auto_arima <- auto.arima(dados$y) # Encontra a ordem do processo de médias móveis
-    q_valor <- arimaorder(modelo_auto_arima)[[3]]
+    modelo_auto_arima <- auto.arima(dados$y) # Encontra o número de termos autorregressivos (p) no modelo
+    p_valor <- arimaorder(modelo_auto_arima)[1]
     
-    return(paste("O valor da ordem do termo de médias móveis (q) é:", q_valor))
+    return(paste("A estimativa do número de termos autorregressivos (p) no modelo, calculada utilizando como critério o AIC, é:", p_valor))
   })
   
   output$graph_decomp <- renderPlot({
@@ -739,9 +776,11 @@ server <- function(input, output){
     
     media_variavel <- as.numeric(medias_por_ano[[var_nome]])
     
-    bins <- intervalos[[var_nome]]
     data_filtered <- subset(medias_por_ano, Ano == ano)
     m <- data_filtered[[var_nome]]
+
+    bins = round(seq(min(m) - sd(m), max(m) + sd(m), by = sd(m)), 2)
+
     pal <- colorBin("YlOrRd", domain = data_filtered$media_variavel, bins = bins)
     labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
                       data_filtered$Station, data_filtered$media_variavel) %>% lapply(htmltools::HTML)
