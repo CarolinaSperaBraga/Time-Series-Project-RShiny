@@ -312,16 +312,42 @@ ui <- fluidPage(
              
              ## Modelagem preditiva
              tabPanel("Modelagem preditiva",
-                      sidebarLayout(
-                        sidebarPanel(width = 3,
-                                     selectInput("modelagem_var", h5("Selecione a variável:"), var_nomes$titulo),
-                                     selectInput("modelagem_est", h5("Selecione a(s) estação(ões) meteorológica(s)"), cidades_mod$estacao, multiple = TRUE),
-                                     selectInput("modelagem_modelo", h5("Selecione o modelo:"), c("ARMA", "ARIMA", "SARIMA")),
-                                     tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
-                        ),
-                        mainPanel()
-                      )        
-             ),
+                      navlistPanel(widths=c(2, 10),
+                                   tabPanel("Predição mensal", icon = icon("chart-line"),
+                                            sidebarLayout(
+                                              sidebarPanel(width = 3,
+                                                           selectInput("modelagem_var", h5("Selecione a variável:"), var_nomes$titulo),
+                                                           selectInput("modelagem_est", h5("Selecione a(s) estação(ões) meteorológica(s)"), cidades_mod$estacao),
+                                                           dateInput("modelagem_data_i", h5("Data de início"), "2013-01-01"),
+                                                           dateInput("modelagem_data_f", h5("Data de fim"), "2020-01-01"),
+                                                           tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
+                                              ),
+                                              mainPanel(plotOutput("graph_modelagem_preditiva"),
+                                                        br(), br(),
+                                                        verbatimTextOutput("stats_modelagem_preditiva"),
+                                                        helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 10 anos (120 meses) com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo, enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
+                                                                 tags$br(),
+                                                                 "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados."))
+                                            )        
+                                   ),
+                                   tabPanel("Predição diária", icon = icon("chart-line"),
+                                            sidebarLayout(
+                                              sidebarPanel(width = 3,
+                                                           selectInput("modelagem_var2", h5("Selecione a variável:"), var_nomes$titulo),
+                                                           selectInput("modelagem_est2", h5("Selecione a(s) estação(ões) meteorológica(s)"), cidades_mod$estacao),
+                                                           dateInput("modelagem_data_i2", h5("Data de início"), "2013-01-01"),
+                                                           dateInput("modelagem_data_f2", h5("Data de fim"), "2020-01-01"),
+                                                           tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
+                                              ),
+                                              mainPanel(plotOutput("graph_modelagem_preditiva2"),
+                                                        br(), br(),
+                                                        verbatimTextOutput("stats_modelagem_preditiva2"),
+                                                        helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 10 anos (120 meses) com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo, enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
+                                                                 tags$br(),
+                                                                 "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados."))
+                                            )        
+                                   )
+             )),
              
              ## Sobre o site
              tabPanel("Sobre o site",
@@ -346,14 +372,17 @@ ui <- fluidPage(
                         tags$b("GitHub dos autores da biblioteca ‘BrazilMet’: "), tags$a(href="https://github.com/FilgueirasR/BrazilMet", "GitHub - FilgueirasR / BrazilMet"),tags$br(),
                         tags$b("Portal do INMET: "), tags$a(href="https://portal.inmet.gov.br/", "Instituto Nacional de Meteorologia (INMET)"),tags$br(),
                         
-                        tags$br(),tags$br(),tags$h4("Autores"),
+                        tags$br(),tags$br(),tags$h4("Professor"),
+                        "Oilson Alberto Gonzatto Junior",
+                        
+                        tags$br(),tags$br(),tags$h4("Equipe Discente"),
                         "Aime Gomes da Nobrega",tags$br(),
                         "Alice Guimarães Perez",tags$br(),
                         "André Dylan Andrade",tags$br(),
                         "Carolina Spera Braga",tags$br(),
                         "Daniel Gregório Chagas",tags$br(),
                         "Matheus Vinicius Barreto de Farias",tags$br(),
-                        "Thaís Parron Alves",tags$br(),
+                        "Thaís Parron Alves",tags$br(),tags$br(),
                         
                         tags$img(src = "usp-university-of-sao-paulo7715.jpg", width = "120px", height = "65px"), tags$img(src = "logo-icmc.png", width = "120px", height = "65px")
                       )
@@ -768,6 +797,120 @@ server <- function(input, output){
   })
   
   
+  ## Modelagem preditiva
+  # Predição mensal
+  output$graph_modelagem_preditiva <- renderPlot({
+    estacao = epc(input$modelagem_est)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$modelagem_var)
+    Data_ini = input$modelagem_data_i
+    Data_fim = input$modelagem_data_f
+    
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    filtro$y <- filtro[[variavel]]
+    medias_T <- aggregate( y ~ months, data = filtro , FUN="mean" )
+    
+    dados = tsibble(
+      data = medias_T$months,
+      y = medias_T$y,
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
+    
+    previsoes <- forecast(modelo_auto_arima, level=c(95), h=10*12)  # Obtenha as previsões do melhor modelo
+    plot(previsoes)
+  })
+  
+  output$stats_modelagem_preditiva <- renderPrint({
+    estacao = epc(input$modelagem_est)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$modelagem_var)
+    Data_ini = input$modelagem_data_i
+    Data_fim = input$modelagem_data_f
+    
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    filtro$y <- filtro[[variavel]]
+    medias_T <- aggregate( y ~ months, data = filtro , FUN="mean" )
+    
+    dados = tsibble(
+      data = medias_T$months,
+      y = medias_T$y,
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
+    
+    p <- arimaorder(modelo_auto_arima)[1]
+    d <- arimaorder(modelo_auto_arima)[2]
+    q <- arimaorder(modelo_auto_arima)[3]
+    if (p == 0 && q == 0) {
+      cat("O modelo é de um processo de médias móveis, com ordem q =", q, "\n")
+    } else if (d == 0 && q == 0) {
+      cat("O modelo é um processo autoregressivo, com ordem p =", p, "\n")
+    } else if (d == 0) {
+      cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
+    } else {
+      cat("O modelo é ARIMA, com ordem p =", p, ", ordem d =", d, "e ordem q =", q, "\n")
+    }
+  })
+  
+  # Predição diária
+  output$graph_modelagem_preditiva2 <- renderPlot({
+    estacao = epc(input$modelagem_est2)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$modelagem_var2)
+    Data_ini = input$modelagem_data_i2
+    Data_fim = input$modelagem_data_f2
+    
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    dados = tsibble(
+      data = ymd(filtro$Date),
+      y = filtro[[variavel]],
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
+    
+    previsoes <- forecast(modelo_auto_arima, level=c(95), h=10*12)  # Obtenha as previsões do melhor modelo
+    plot(previsoes)
+  })
+  
+  output$stats_modelagem_preditiva2 <- renderPrint({
+    estacao = epc(input$modelagem_est2)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$modelagem_var2)
+    Data_ini = input$modelagem_data_i2
+    Data_fim = input$modelagem_data_f2
+
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    dados = tsibble(
+      data = ymd(filtro$Date),
+      y = filtro[[variavel]],
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
+    
+    p <- arimaorder(modelo_auto_arima)[1]
+    d <- arimaorder(modelo_auto_arima)[2]
+    q <- arimaorder(modelo_auto_arima)[3]
+    if (p == 0 && q == 0) {
+      cat("O modelo é de um processo de médias móveis, com ordem q =", q, "\n")
+    } else if (d == 0 && q == 0) {
+      cat("O modelo é um processo autoregressivo, com ordem p =", p, "\n")
+    } else if (d == 0) {
+      cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
+    } else {
+      cat("O modelo é ARIMA, com ordem p =", p, ", ordem d =", d, "e ordem q =", q, "\n")
+    }
+  })
+  
+  
   ## Análise geográfica
   output$map <- renderLeaflet({
     ano <- input$ano
@@ -778,9 +921,9 @@ server <- function(input, output){
     
     data_filtered <- subset(medias_por_ano, Ano == ano)
     m <- data_filtered[[var_nome]]
-
+    
     bins = round(seq(min(m) - sd(m), max(m) + sd(m), by = sd(m)), 2)
-
+    
     pal <- colorBin("YlOrRd", domain = data_filtered$media_variavel, bins = bins)
     labels <- sprintf("<strong>%s</strong><br/>%g anos<sup></sup>",
                       data_filtered$Station, data_filtered$media_variavel) %>% lapply(htmltools::HTML)
