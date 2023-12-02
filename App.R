@@ -846,7 +846,7 @@ server <- function(input, output){
     p <- arimaorder(modelo_auto_arima)[1]
     d <- arimaorder(modelo_auto_arima)[2]
     q <- arimaorder(modelo_auto_arima)[3]
-    if (p == 0 && q == 0) {
+    if (p == 0 && d == 0) {
       cat("O modelo é de médias móveis, com ordem q =", q, "\n")
     } else if (d == 0 && q == 0) {
       cat("O modelo é autoregressivo, com ordem p =", p, "\n")
