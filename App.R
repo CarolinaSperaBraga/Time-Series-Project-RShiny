@@ -325,7 +325,7 @@ ui <- fluidPage(
                                               mainPanel(plotOutput("graph_modelagem_preditiva"),
                                                         br(), br(),
                                                         verbatimTextOutput("stats_modelagem_preditiva"),
-                                                        helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 10 anos (120 meses) com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo, enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
+                                                        helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 3 anos (36 meses) com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo, enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
                                                                  tags$br(),
                                                                  "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados."))
                                             )        
@@ -347,7 +347,7 @@ ui <- fluidPage(
                                                                  "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados."))
                                             )        
                                    )
-             )),
+                      )),
              
              ## Sobre o site
              tabPanel("Sobre o site",
@@ -819,7 +819,7 @@ server <- function(input, output){
     
     modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
     
-    previsoes <- forecast(modelo_auto_arima, level=c(95), h=10*12)  # Obtenha as previsões do melhor modelo
+    previsoes <- forecast(modelo_auto_arima, level=c(95), h=36)  # Obtenha as previsões do melhor modelo
     plot(previsoes)
   })
   
@@ -847,9 +847,9 @@ server <- function(input, output){
     d <- arimaorder(modelo_auto_arima)[2]
     q <- arimaorder(modelo_auto_arima)[3]
     if (p == 0 && q == 0) {
-      cat("O modelo é de um processo de médias móveis, com ordem q =", q, "\n")
+      cat("O modelo é de médias móveis, com ordem q =", q, "\n")
     } else if (d == 0 && q == 0) {
-      cat("O modelo é um processo autoregressivo, com ordem p =", p, "\n")
+      cat("O modelo é autoregressivo, com ordem p =", p, "\n")
     } else if (d == 0) {
       cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
     } else {
@@ -885,7 +885,7 @@ server <- function(input, output){
     variavel = tpv(input$modelagem_var2)
     Data_ini = input$modelagem_data_i2
     Data_fim = input$modelagem_data_f2
-
+    
     base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
     filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
     dados = tsibble(
@@ -900,9 +900,9 @@ server <- function(input, output){
     d <- arimaorder(modelo_auto_arima)[2]
     q <- arimaorder(modelo_auto_arima)[3]
     if (p == 0 && q == 0) {
-      cat("O modelo é de um processo de médias móveis, com ordem q =", q, "\n")
+      cat("O modelo é de médias móveis, com ordem q =", q, "\n")
     } else if (d == 0 && q == 0) {
-      cat("O modelo é um processo autoregressivo, com ordem p =", p, "\n")
+      cat("O modelo é autoregressivo, com ordem p =", p, "\n")
     } else if (d == 0) {
       cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
     } else {
