@@ -71,8 +71,8 @@ carrega_estacao = function(cod_estacao){
   dados[is.na(dados$UF),"UF"] = unique(na.omit(dados$UF))
   
   # imputa os dados
-  dados <- na_interpolation(dados, option = "stine")
-  # dados <- na_seadec(dados, algorithm = "interpolation")
+  # dados <- na_interpolation(dados, option = "stine")
+  dados <- na_seadec(dados, algorithm = "interpolation")
   
   return(dados)
 }
@@ -342,7 +342,7 @@ ui <- fluidPage(
                                               mainPanel(plotOutput("graph_modelagem_preditiva2"),
                                                         br(), br(),
                                                         verbatimTextOutput("stats_modelagem_preditiva2"),
-                                                        helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 10 anos (120 meses) com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo, enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
+                                                        helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 120 dias com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo (em contagem de anos), enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
                                                                  tags$br(),
                                                                  "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados."))
                                             )        
@@ -865,17 +865,16 @@ server <- function(input, output){
     Data_ini = input$modelagem_data_i2
     Data_fim = input$modelagem_data_f2
     
-    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
     filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
     dados = tsibble(
-      data = ymd(filtro$Date),
+      data = filtro$Date,  
       y = filtro[[variavel]],
       index = data
     )
     
-    modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
-    
-    previsoes <- forecast(modelo_auto_arima, level=c(95), h=10*12)  # Obtenha as previsões do melhor modelo
+    y <- msts(dados$y, seasonal.periods = c(7, 365.25))
+    fit <- tbats(y)
+    previsoes <- forecast(fit, level=c(95), h = 10*12) # Obtendo as previsões do melhor modelo para 120 períodos à frente
     plot(previsoes)
   })
   
