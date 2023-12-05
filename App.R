@@ -317,7 +317,7 @@ ui <- fluidPage(
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
                                                            selectInput("modelagem_var", h5("Selecione a variável:"), var_nomes$titulo),
-                                                           selectInput("modelagem_est", h5("Selecione a(s) estação(ões) meteorológica(s)"), cidades_mod$estacao),
+                                                           selectInput("modelagem_est", h5("Selecione a estação meteorológica"), cidades_mod$estacao),
                                                            dateInput("modelagem_data_i", h5("Data de início"), "2013-01-01"),
                                                            dateInput("modelagem_data_f", h5("Data de fim"), "2020-01-01"),
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
@@ -334,7 +334,7 @@ ui <- fluidPage(
                                             sidebarLayout(
                                               sidebarPanel(width = 3,
                                                            selectInput("modelagem_var2", h5("Selecione a variável:"), var_nomes$titulo),
-                                                           selectInput("modelagem_est2", h5("Selecione a(s) estação(ões) meteorológica(s)"), cidades_mod$estacao),
+                                                           selectInput("modelagem_est2", h5("Selecione a estação meteorológica"), cidades_mod$estacao),
                                                            dateInput("modelagem_data_i2", h5("Data de início"), "2013-01-01"),
                                                            dateInput("modelagem_data_f2", h5("Data de fim"), "2020-01-01"),
                                                            tags$div(id = "cite", h6('Dados retirados do portal INMET.'))
