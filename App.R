@@ -846,14 +846,26 @@ server <- function(input, output){
     p <- arimaorder(modelo_auto_arima)[1]
     d <- arimaorder(modelo_auto_arima)[2]
     q <- arimaorder(modelo_auto_arima)[3]
-    if (p == 0 && d == 0) {
-      cat("O modelo é de médias móveis, com ordem q =", q, "\n")
-    } else if (d == 0 && q == 0) {
-      cat("O modelo é autoregressivo, com ordem p =", p, "\n")
-    } else if (d == 0) {
-      cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
+    
+    if (length(arimaorder(modelo_auto_arima)) > 3) { # Verificar se existem termos sazonais
+      P <- arimaorder(modelo_auto_arima)[4]
+      D <- arimaorder(modelo_auto_arima)[5]
+      Q <- arimaorder(modelo_auto_arima)[6]
+      comp_sazonal <- arimaorder(modelo_auto_arima)[7]
+      
+      cat("O modelo é SARIMA, com ordens \np =", p, ", d =", d, ", q =", q,", P =", P, ", D =", D, ", Q =", Q,
+          "\ne componente sazonal com um período de", comp_sazonal, "observações.")
+      
     } else {
-      cat("O modelo é ARIMA, com ordem p =", p, ", ordem d =", d, "e ordem q =", q, "\n")
+      if (p == 0 && d == 0) {
+        cat("O modelo é de médias móveis, com ordem q =", q, "\n")
+      } else if (d == 0 && q == 0) {
+        cat("O modelo é autoregressivo, com ordem p =", p, "\n")
+      } else if (d == 0) {
+        cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
+      } else {
+        cat("O modelo é ARIMA, com ordem p =", p, ", ordem d =", d, "e ordem q =", q, "\n")
+      }
     }
   })
   
@@ -898,14 +910,26 @@ server <- function(input, output){
     p <- arimaorder(modelo_auto_arima)[1]
     d <- arimaorder(modelo_auto_arima)[2]
     q <- arimaorder(modelo_auto_arima)[3]
-    if (p == 0 && d == 0) {
-      cat("O modelo é de médias móveis, com ordem q =", q, "\n")
-    } else if (d == 0 && q == 0) {
-      cat("O modelo é autoregressivo, com ordem p =", p, "\n")
-    } else if (d == 0) {
-      cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
+
+    if (length(arimaorder(modelo_auto_arima)) > 3) { # Verificar se existem termos sazonais
+      P <- arimaorder(modelo_auto_arima)[4]
+      D <- arimaorder(modelo_auto_arima)[5]
+      Q <- arimaorder(modelo_auto_arima)[6]
+      comp_sazonal <- arimaorder(modelo_auto_arima)[7]
+      
+      cat("O modelo é SARIMA, com ordens \np =", p, ", d =", d, ", q =", q,", P =", P, ", D =", D, ", Q =", Q,
+          "\ne componente sazonal com um período de", comp_sazonal, "observações.")
+      
     } else {
-      cat("O modelo é ARIMA, com ordem p =", p, ", ordem d =", d, "e ordem q =", q, "\n")
+      if (p == 0 && d == 0) {
+        cat("O modelo é de médias móveis, com ordem q =", q, "\n")
+      } else if (d == 0 && q == 0) {
+        cat("O modelo é autoregressivo, com ordem p =", p, "\n")
+      } else if (d == 0) {
+        cat("O modelo é ARMA, com ordem p =", p, "e ordem q =", q, "\n")
+      } else {
+        cat("O modelo é ARIMA, com ordem p =", p, ", ordem d =", d, "e ordem q =", q, "\n")
+      }
     }
   })
   
