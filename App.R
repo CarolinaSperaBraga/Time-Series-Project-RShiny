@@ -20,6 +20,7 @@ library(stringr)
 
 # Bibliotecas operacionais
 library(forecast)
+library(tseries)
 library(dplyr)
 library(fpp3)
 library(tsibble)
@@ -325,9 +326,10 @@ ui <- fluidPage(
                                               mainPanel(plotOutput("graph_modelagem_preditiva"),
                                                         br(), br(),
                                                         verbatimTextOutput("stats_modelagem_preditiva"),
+                                                        verbatimTextOutput("stats_modelagem_preditiva11"),
                                                         helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 3 anos (36 meses) com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo, enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
                                                                  tags$br(),
-                                                                 "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados."))
+                                                                 "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados. E em seguida temos o teste de normalidade de Jarque-Bera, para verificar a normalidade dos resíduos, caso não rejeitemos a hipótese nula, podemos afirmar que os resíduos seguem a distribuição normal, o que indica que o modelo é apropriado aos dados."))
                                             )        
                                    ),
                                    tabPanel("Predição diária", icon = icon("chart-line"),
@@ -342,9 +344,10 @@ ui <- fluidPage(
                                               mainPanel(plotOutput("graph_modelagem_preditiva2"),
                                                         br(), br(),
                                                         verbatimTextOutput("stats_modelagem_preditiva2"),
+                                                        verbatimTextOutput("stats_modelagem_preditiva22"),
                                                         helpText("O gráfico exibe as previsões do modelo para um horizonte de previsão de 120 dias com um intervalo de confiança de 95%. As previsões podem incluir tendências e padrões identificados automaticamente pelo modelo. O eixo x representa o tempo (em contagem de anos), enquanto o eixo y representa os valores previstos. O intervalo sombreado ao redor das previsões destaca a incerteza associada às previsões, refletindo a variabilidade esperada nos dados futuros. Este gráfico é útil para avaliar a confiança nas previsões e identificar possíveis padrões de tendência.",tags$br(),
                                                                  tags$br(),
-                                                                 "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados."))
+                                                                 "Abaixo do gráfico encontram-se os valores estimados para os parâmetros, e com base neles o modelo mais apropriado para o ajuste dos dados. E em seguida temos o teste de normalidade de Jarque-Bera, para verificar a normalidade dos resíduos, caso não rejeitemos a hipótese nula, podemos afirmar que os resíduos seguem a distribuição normal, o que indica que o modelo é apropriado aos dados."))
                                             )        
                                    )
                       )),
@@ -869,6 +872,38 @@ server <- function(input, output){
     }
   })
   
+  output$stats_modelagem_preditiva11 <- renderPrint({
+    estacao = epc(input$modelagem_est)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$modelagem_var)
+    Data_ini = input$modelagem_data_i
+    Data_fim = input$modelagem_data_f
+    
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    filtro$y <- filtro[[variavel]]
+    medias_T <- aggregate( y ~ months, data = filtro , FUN="mean" )
+    
+    dados = tsibble(
+      data = medias_T$months,
+      y = medias_T$y,
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
+    
+    residuos <- residuals(modelo_auto_arima)
+    resultado_teste <- jarque.bera.test(residuos)
+    cat("Resultado do Teste de normalidade de Jarque-Bera:\n")
+    cat("Estatística de teste:", resultado_teste$statistic, "\n")
+    cat("Valor p:", resultado_teste$p.value, "\n")
+    if (resultado_teste$p.value < 0.05) {
+      cat("Rejeitamos a hipótese nula - os resíduos não seguem uma distribuição normal.\n")
+    } else {
+      cat("Não rejeitamos a hipótese nula - os resíduos parecem seguir uma distribuição normal.\n")
+    }
+  })
+  
   # Predição diária
   output$graph_modelagem_preditiva2 <- renderPlot({
     estacao = epc(input$modelagem_est2)
@@ -930,6 +965,35 @@ server <- function(input, output){
       } else {
         cat("O modelo é ARIMA, com ordem p =", p, ", ordem d =", d, "e ordem q =", q, "\n")
       }
+    }
+  })
+  
+  output$stats_modelagem_preditiva22 <- renderPrint({
+    estacao = epc(input$modelagem_est2)
+    base = carrega_estacao(estacao)
+    variavel = tpv(input$modelagem_var2)
+    Data_ini = input$modelagem_data_i2
+    Data_fim = input$modelagem_data_f2
+    
+    base$months <- yearmonth(base$Date) # Passando pra formato ano/mês
+    filtro <- filter(base, Station_code == toString(estacao) & Date >= toString(Data_ini) & Date <= toString(Data_fim) )
+    dados = tsibble(
+      data = ymd(filtro$Date),
+      y = filtro[[variavel]],
+      index = data
+    )
+    
+    modelo_auto_arima <- auto.arima(dados) # Estime automaticamente os parâmetros do modelo ARIMA
+  
+    residuos <- residuals(modelo_auto_arima)
+    resultado_teste <- jarque.bera.test(residuos)
+    cat("Resultado do Teste de normalidade de Jarque-Bera:\n")
+    cat("Estatística de teste:", resultado_teste$statistic, "\n")
+    cat("Valor p:", resultado_teste$p.value, "\n")
+    if (resultado_teste$p.value < 0.05) {
+      cat("Rejeitamos a hipótese nula - os resíduos não seguem uma distribuição normal.\n")
+    } else {
+      cat("Não rejeitamos a hipótese nula - os resíduos parecem seguir uma distribuição normal.\n")
     }
   })
   
